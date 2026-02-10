@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعداد Google Sheets</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .setup-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .step-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .step-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+        
+        .copy-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .copy-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="text-center mb-4">
+            <h1 class="mb-3">
+                <i class="fas fa-google me-2"></i>
+                إعداد Google Sheets
+            </h1>
+            <p class="text-muted">اتبع هذه الخطوات لتوصيل لوحة التحكم بـ Google Sheets</p>
+        </div>
+        
+        <!-- Step 1 -->
+        <div class="step-card">
+            <div class="step-number">1</div>
+            <h4>إنشاء Google Sheets</h4>
+            <p>أولاً، قم بإنشاء جدول Google Sheets جديد:</p>
+            <ol>
+                <li>اذهب إلى <a href="https://sheets.new" target="_blank">Google Sheets</a></li>
+                <li>أنشئ جدول جديد باسم "Admin Dashboard Database"</li>
+                <li>أنشئ الأوراق التالية بالأسماء المحددة:</li>
+            </ol>
+            
+            <div class="code-block">
+products
+orders
+categories
+customers
+order_items
+promotions
+            </div>
+            
+            <div class="highlight">
+                <strong>ملاحظة:</strong> يجب أن تكون أسماء الأوراق مطابقة تماماً للأسماء المذكورة أعلاه.
+            </div>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="step-card">
+            <div class="step-number">2</div>
+            <h4>إعداد الأعمدة</h4>
+            <p>أضف الأعمدة التالية لكل ورقة:</p>
+            
+            <h6>ورقة products:</h6>
+            <div class="code-block">
+A1: product_id
+B1: category_id
+C1: product_name
+D1: qtepack
+E1: price
+F1: image_url
+G1: status
+H1: description
+            </div>
+            
+            <h6>ورقة orders:</h6>
+            <div class="code-block">
+A1: order_id
+B1: customer_id
+C1: customer_name
+D1: phone
+E1: address
+F1: total_price
+G1: order_status
+H1: order_date
+I1: items
+            </div>
+            
+            <h6>ورقة categories:</h6>
+            <div class="code-block">
+A1: category_id
+B1: category_name
+C1: image_url
+            </div>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="step-card">
+            <div class="step-number">3</div>
+            <h4>الحصول على معرف الجدول (Spreadsheet ID)</h4>
+            <p>احصل على معرف الجدول من رابط Google Sheets:</p>
+            
+            <div class="code-block">
+https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
+            </div>
+            
+            <p>مثال:</p>
+            <div class="code-block">
+https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+            </div>
+            
+            <p>المعرف هو:</p>
+            <div class="code-block">
+1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+            </div>
+        </div>
+        
+        <!-- Step 4 -->
+        <div class="step-card">
+            <div class="step-number">4</div>
+            <h4>إنشاء Google Apps Script</h4>
+            <p>إنشاء سكريبت للتعامل مع البيانات:</p>
+            <ol>
+                <li>في جدول Google Sheets، اذهب إلى: Extensions > Apps Script</li>
+                <li>احذف الكود الافتراضي</li>
+                <li>ألصق الكود التالي:</li>
+            </ol>
+            
+            <div class="code-block">
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet();
+  const action = e.parameter.action;
+  
+  try {
+    switch(action) {
+      case 'getProducts':
+        return getSheetData('products');
+      case 'getOrders':
+        return getSheetData('orders');
+      case 'getCategories':
+        return getSheetData('categories');
+      case 'getCustomers':
+        return getSheetData('customers');
+      case 'getOrderItems':
+        return getSheetData('order_items');
+      case 'getPromotions':
+        return getSheetData('promotions');
+      default:
+        return ContentService.createTextOutput('Invalid action')
+          .setMimeType(ContentService.MimeType.TEXT);
+    }
+  } catch(error) {
+    return ContentService.createTextOutput('Error: ' + error.toString())
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet();
+  const action = e.parameter.action;
+  const data = JSON.parse(e.postData.contents);
+  
+  try {
+    switch(action) {
+      case 'addProduct':
+        return addRow('products', data);
+      case 'addOrder':
+        return addRow('orders', data);
+      case 'updateProduct':
+        return updateRow('products', data);
+      case 'deleteProduct':
+        return deleteRow('products', data);
+      default:
+        return ContentService.createTextOutput('Invalid action')
+          .setMimeType(ContentService.MimeType.TEXT);
+    }
+  } catch(error) {
+    return ContentService.createTextOutput('Error: ' + error.toString())
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+
+function getSheetData(sheetName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const data = sheet.getDataRange().getValues();
+  
+  // Skip header row
+  const rows = data.slice(1).map(row => 
+    row.map(cell => cell !== null ? cell.toString() : '')
+  );
+  
+  return ContentService.createTextOutput(JSON.stringify(rows))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function addRow(sheetName, data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  sheet.appendRow(data);
+  
+  return ContentService.createTextOutput('Success')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function updateRow(sheetName, data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const range = sheet.getRange(data.row, 1, 1, data.values.length);
+  range.setValues([data.values]);
+  
+  return ContentService.createTextOutput('Success')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function deleteRow(sheetName, data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  sheet.deleteRow(data.row);
+  
+  return ContentService.createTextOutput('Success')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+            </div>
+            
+            <button class="copy-btn" onclick="copyCode()">
+                <i class="fas fa-copy me-1"></i>
+                نسخ الكود
+            </button>
+        </div>
+        
+        <!-- Step 5 -->
+        <div class="step-card">
+            <div class="step-number">5</div>
+            <h4>نشر السكريبت كـ Web App</h4>
+            <ol>
+                <li>احفظ المشروع (Ctrl+S)</li>
+                <li>اضغط على Deploy > New Deployment</li>
+                <li>اختر: Web app</li>
+                <li>الإعدادات:</li>
+            </ol>
+            
+            <div class="highlight">
+                <ul>
+                    <li><strong>Description:</strong> Admin Dashboard API</li>
+                    <li><strong>Execute as:</strong> Me</li>
+                    <li><strong>Who has access:</strong> Anyone</li>
+                </ul>
+            </div>
+            
+            <ol start="5">
+                <li>اضغط Deploy</li>
+                <li>انسخ رابط Web app URL</li>
+                <li>أضف الرابط في لوحة التحكم</li>
+            </ol>
+        </div>
+        
+        <!-- Step 6 -->
+        <div class="step-card">
+            <div class="step-number">6</div>
+            <h4>إعداد لوحة التحكم</h4>
+            <p>أضف معلومات Google Sheets في لوحة التحكم:</p>
+            
+            <div class="form-group mb-3">
+                <label for="spreadsheetId" class="form-label">معرف الجدول (Spreadsheet ID):</label>
+                <input type="text" class="form-control" id="spreadsheetId" 
+                       value="1PmqiCI3FXiP0rswBXda-ReJySE4VkHcmIh3rvzfAh5k"
+                       placeholder="أدخل معرف الجدول هنا">
+                <small class="text-muted">معرف الجدول الخاص بك تم إدخاله تلقائياً</small>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="webAppUrl" class="form-label">رابط Web App:</label>
+                <input type="text" class="form-control" id="webAppUrl" 
+                       value="https://script.google.com/macros/s/AKfycbxQmwApMVQ2ZYPIHj63AA-Z1p1wQihyCFe0ypJNMheJl7UN0acV7wZZwBSOrDptyBp8ig/exec"
+                       placeholder="أدخل رابط Web App هنا">
+                <small class="text-muted">رابط Web App الخاص بك تم إدخاله تلقائياً</small>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveSettings()">
+                <i class="fas fa-save me-2"></i>
+                حفظ الإعدادات
+            </button>
+            <button class="btn btn-success ms-2" onclick="autoSaveAndTest()">
+                <i class="fas fa-magic me-2"></i>
+                حفظ تلقائي واختبار
+            </button>
+        </div>
+        
+        <!-- Test Section -->
+        <div class="step-card">
+            <div class="step-number">7</div>
+            <h4>اختبار الاتصال</h4>
+            <p>بعد حفظ الإعدادات، اختبر الاتصال:</p>
+            
+            <button class="btn btn-success" onclick="testConnection()">
+                <i class="fas fa-plug me-2"></i>
+                اختبار الاتصال
+            </button>
+            
+            <div id="testResult" class="mt-3"></div>
+        </div>
+        
+        <!-- Success Message -->
+        <div class="success-box">
+            <h5><i class="fas fa-check-circle me-2"></i>تم الإعداد بنجاح!</h5>
+            <p>الآن يمكنك استخدام لوحة التحكم مع Google Sheets. سيتم مزامنة البيانات تلقائياً كل 5 دقائق.</p>
+        </div>
+        
+        <!-- Warning -->
+        <div class="warning-box">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>ملاحظات هامة:</h5>
+            <ul>
+                <li>تأكد من أن الجداول تحتوي على بيانات أولية</li>
+                <li>تحقق من صلاحيات المشاركة (Anyone)</li>
+                <li>قد تحتاج إلى انتظار بضع دقائق بعد النشر</li>
+                <li>إذا واجهت مشاكل، تحقق من سجل الأخطاء في Google Apps Script</li>
+            </ul>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="text-center mt-4">
+            <a href="index.html" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>
+                العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        function copyCode() {
+            const codeBlocks = document.querySelectorAll('.code-block');
+            const lastCodeBlock = codeBlocks[codeBlocks.length - 1];
+            
+            navigator.clipboard.writeText(lastCodeBlock.textContent).then(() => {
+                showAlert('success', 'تم نسخ الكود بنجاح!');
+            });
+        }
+        
+        function saveSettings() {
+            const spreadsheetId = document.getElementById('spreadsheetId').value;
+            const webAppUrl = document.getElementById('webAppUrl').value;
+            
+            if (!spreadsheetId || !webAppUrl) {
+                showAlert('warning', 'يرجى ملء جميع الحقول');
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('spreadsheetId', spreadsheetId);
+            localStorage.setItem('webAppUrl', webAppUrl);
+            
+            showAlert('success', 'تم حفظ الإعدادات بنجاح!');
+        }
+        
+        function autoSaveAndTest() {
+            saveSettings();
+            setTimeout(() => {
+                testConnection();
+            }, 1000);
+        }
+        
+        function testConnection() {
+            const webAppUrl = localStorage.getItem('webAppUrl');
+            
+            if (!webAppUrl) {
+                showAlert('warning', 'يرجى حفظ الإعدادات أولاً');
+                return;
+            }
+            
+            const testResult = document.getElementById('testResult');
+            testResult.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+            
+            // Test connection
+            fetch(`${webAppUrl}?action=getProducts`)
+                .then(response => response.text())
+                .then(data => {
+                    try {
+                        JSON.parse(data);
+                        testResult.innerHTML = '<div class="alert alert-success">الاتصال بنجاح! يمكن قراءة البيانات من Google Sheets.</div>';
+                    } catch (error) {
+                        testResult.innerHTML = '<div class="alert alert-warning">اتصال ناجح ولكن قد تكون هناك مشكلة في تنسيق البيانات.</div>';
+                    }
+                })
+                .catch(error => {
+                    testResult.innerHTML = '<div class="alert alert-danger">فشل الاتصال: ' + error.message + '</div>';
+                });
+        }
+        
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const container = document.querySelector('.setup-container');
+            container.insertAdjacentHTML('afterbegin', alertHtml);
+            
+            setTimeout(() => {
+                const alert = container.querySelector('.alert');
+                if (alert) alert.remove();
+            }, 5000);
+        }
+        
+        // Load saved settings
+        document.addEventListener('DOMContentLoaded', function() {
+            const spreadsheetId = localStorage.getItem('spreadsheetId');
+            const webAppUrl = localStorage.getItem('webAppUrl');
+            
+            if (spreadsheetId) {
+                document.getElementById('spreadsheetId').value = spreadsheetId;
+            }
+            
+            if (webAppUrl) {
+                document.getElementById('webAppUrl').value = webAppUrl;
+            }
+        });
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

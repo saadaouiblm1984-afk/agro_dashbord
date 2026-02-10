@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الأصناف</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --light-color: #ECF0F1;
+            --dark-color: #2C3E50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-content {
+            margin-right: 280px;
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .category-card {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .category-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 3px solid var(--secondary-color);
+        }
+        
+        .category-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .category-id {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .btn-add {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--success-color);
+            border: none;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 5px 20px rgba(39, 174, 96, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-add:hover {
+            transform: scale(1.1);
+            background: #229954;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+        }
+        
+        .error {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .sidebar {
+            background: var(--primary-color);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 1000;
+            height: 100vh;
+            overflow-y: auto;
+            width: 280px;
+        }
+        
+        .sidebar .nav-link {
+            color: white;
+            padding: 12px 20px;
+            margin: 2px 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .sidebar .nav-link:hover {
+            background: var(--secondary-color);
+            transform: translateX(-5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background: var(--secondary-color);
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-header h3 {
+            color: white;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h3>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="index.html">
+                <i class="fas fa-home"></i> الرئيسية
+            </a>
+            <a class="nav-link active" href="category.html">
+                <i class="fas fa-tags"></i> الأصناف
+            </a>
+            <a class="nav-link" href="products.html">
+                <i class="fas fa-box"></i> المنتجات
+            </a>
+            <a class="nav-link" href="orders.html">
+                <i class="fas fa-shopping-cart"></i> الطلبات
+            </a>
+            <a class="nav-link" href="customers.html">
+                <i class="fas fa-users"></i> العملاء
+            </a>
+            <a class="nav-link" href="google_sheets_setup.html">
+                <i class="fas fa-cog"></i> إعداد Google Sheets
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="text-white mb-3">
+                        <i class="fas fa-tags"></i> إدارة الأصناف
+                    </h2>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="loadingState" class="loading">
+                <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                <h4>جاري تحميل الأصناف...</h4>
+            </div>
+            
+            <!-- Error State -->
+            <div id="errorState" class="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorMessage">حدث خطأ في تحميل البيانات</span>
+                <button class="btn btn-light mt-2" onclick="loadCategories()">
+                    <i class="fas fa-redo"></i> إعادة المحاولة
+                </button>
+            </div>
+            
+            <!-- Categories Grid -->
+            <div id="categoriesGrid" class="row" style="display: none;">
+                <!-- Categories will be loaded here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Button -->
+    <button class="btn-add" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Add Category Modal -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة صنف جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCategoryForm">
+                        <div class="mb-3">
+                            <label for="categoryId" class="form-label">معرف الصنف</label>
+                            <input type="text" class="form-control" id="categoryId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label">اسم الصنف</label>
+                            <input type="text" class="form-control" id="categoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="imageUrl" class="form-label">رابط الصورة</label>
+                            <input type="url" class="form-control" id="imageUrl" 
+                                   placeholder="https://example.com/image.jpg">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" onclick="addCategory()">
+                        <i class="fas fa-save"></i> حفظ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Optimized Google Sheets Integration -->
+    <script src="google_sheets_optimized.js"></script>
+    
+    <script>
+        let googleSheetsAPI;
+        let categories = [];
+        let performanceMetrics = {};
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            googleSheetsAPI = new OptimizedGoogleSheetsAPI();
+            
+            // Show performance info in console
+            setInterval(() => {
+                const metrics = googleSheetsAPI.getPerformanceMetrics();
+                if (metrics.requests > 0) {
+                    console.log('Performance Metrics:', metrics);
+                }
+            }, 10000);
+            
+            loadCategories();
+        });
+
+        // Load categories from Google Sheets with enhanced loading states
+        async function loadCategories() {
+            try {
+                showLoading();
+                
+                // Check if we should use local data
+                const useLocalData = localStorage.getItem('useLocalData');
+                if (useLocalData === 'true') {
+                    const fallbackData = localStorage.getItem('categoryFallbackData');
+                    if (fallbackData) {
+                        categories = JSON.parse(fallbackData);
+                        displayCategories(categories);
+                        showNotification('تم تحميل البيانات من التخزين المحلي', 'info');
+                        hideLoading();
+                        return;
+                    }
+                }
+                
+                const response = await googleSheetsAPI.getSheetData('category');
+                
+                if (response.success && response.data) {
+                    categories = response.data;
+                    displayCategories(categories);
+                    
+                    // Show performance info
+                    if (response.fromCache) {
+                        showNotification('تم تحميل البيانات من الذاكرة المؤقتة', 'info');
+                    } else {
+                        showNotification('تم تحميل البيانات من Google Sheets', 'success');
+                    }
+                    
+                    hideLoading();
+                } else {
+                    // Try fallback data
+                    const fallbackData = localStorage.getItem('categoryFallbackData');
+                    if (fallbackData) {
+                        categories = JSON.parse(fallbackData);
+                        displayCategories(categories);
+                        showNotification('تم استخدام البيانات الاحتياطية المحلية', 'warning');
+                        hideLoading();
+                    } else {
+                        showError('فشل في تحميل الأصناف: ' + (response.error || 'خطأ غير معروف') + '<br><a href="category_debug.html" class="btn btn-sm btn-light mt-2"><i class="fas fa-bug"></i> تشخيص المشكلة</a>');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                
+                // Try fallback data
+                const fallbackData = localStorage.getItem('categoryFallbackData');
+                if (fallbackData) {
+                    categories = JSON.parse(fallbackData);
+                    displayCategories(categories);
+                    showNotification('تم استخدام البيانات الاحتياطية بسبب خطأ في الاتصال', 'warning');
+                    hideLoading();
+                } else {
+                    showError('حدث خطأ في الاتصال بـ Google Sheets<br><a href="category_debug.html" class="btn btn-sm btn-light mt-2"><i class="fas fa-bug"></i> تشخيص المشكلة</a>');
+                }
+            }
+        }
+
+        // Enhanced notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; left: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+
+        // Display categories with animation
+        function displayCategories(categoriesData) {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = '';
+            grid.style.opacity = '0';
+
+            categoriesData.forEach((category, index) => {
+                setTimeout(() => {
+                    const categoryCard = createCategoryCard(category);
+                    grid.innerHTML += categoryCard;
+                    
+                    // Fade in effect
+                    grid.style.opacity = '1';
+                    grid.style.transition = 'opacity 0.5s ease';
+                }, index * 50); // Stagger the animations
+            });
+
+            grid.style.display = 'flex';
+        }
+
+        // Create category card HTML with lazy loading for images
+        function createCategoryCard(category) {
+            const imageUrl = category.image_url || `https://picsum.photos/seed/${category.category_id}/100/100.jpg`;
+            
+            return `
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                    <div class="card category-card">
+                        <img src="${imageUrl}" alt="${category.category_name}" class="category-image" 
+                             loading="lazy" onerror="this.src='https://picsum.photos/seed/default/100/100.jpg'">
+                        <div class="category-name">${category.category_name}</div>
+                        <div class="category-id">${category.category_id}</div>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editCategory('${category.category_id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${category.category_id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add new category with enhanced feedback
+        async function addCategory() {
+            const categoryId = document.getElementById('categoryId').value;
+            const categoryName = document.getElementById('categoryName').value;
+            const imageUrl = document.getElementById('imageUrl').value;
+
+            if (!categoryId || !categoryName) {
+                showNotification('يرجى ملء الحقول المطلوبة', 'warning');
+                return;
+            }
+
+            try {
+                showNotification('جاري إضافة الصنف...', 'info');
+                
+                const newCategory = {
+                    category_id: categoryId,
+                    category_name: categoryName,
+                    image_url: imageUrl || `https://picsum.photos/seed/${categoryId}/100/100.jpg`
+                };
+
+                const response = await googleSheetsAPI.addRow('category', newCategory);
+                
+                if (response.success) {
+                    // Close modal and reset form
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+                    modal.hide();
+                    document.getElementById('addCategoryForm').reset();
+                    
+                    showNotification('تم إضافة الصنف بنجاح', 'success');
+                    
+                    // Reload categories
+                    await loadCategories();
+                } else {
+                    showNotification('فشل في إضافة الصنف: ' + (response.error || 'خطأ غير معروف'), 'danger');
+                }
+            } catch (error) {
+                console.error('Error adding category:', error);
+                showNotification('حدث خطأ في إضافة الصنف', 'danger');
+            }
+        }
+
+        // Edit category (placeholder function)
+        function editCategory(categoryId) {
+            const category = categories.find(c => c.category_id === categoryId);
+            if (category) {
+                document.getElementById('categoryId').value = category.category_id;
+                document.getElementById('categoryName').value = category.category_name;
+                document.getElementById('imageUrl').value = category.image_url || '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+                modal.show();
+            }
+        }
+
+        // Delete category with confirmation
+        async function deleteCategory(categoryId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
+                return;
+            }
+
+            try {
+                showNotification('جاري حذف الصنف...', 'info');
+                
+                const response = await googleSheetsAPI.deleteRow('category', 'category_id', categoryId);
+                
+                if (response.success) {
+                    showNotification('تم حذف الصنف بنجاح', 'success');
+                    await loadCategories();
+                } else {
+                    showNotification('فشل في حذف الصنف: ' + (response.error || 'خطأ غير معروف'), 'danger');
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                showNotification('حدث خطأ في حذف الصنف', 'danger');
+            }
+        }
+
+        // UI Helper functions with enhanced states
+        function showLoading() {
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const grid = document.getElementById('categoriesGrid');
+            
+            loadingState.style.display = 'block';
+            errorState.style.display = 'none';
+            grid.style.display = 'none';
+            
+            // Add progress indicator
+            loadingState.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <h4 class="mt-3">جاري تحميل الأصناف...</h4>
+                    <div class="progress mt-3" style="max-width: 300px; margin: 0 auto;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorState = document.getElementById('errorState');
+            const loadingState = document.getElementById('loadingState');
+            const grid = document.getElementById('categoriesGrid');
+            
+            errorState.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle me-3"></i>
+                    <div>
+                        <h5>خطأ في التحميل</h5>
+                        <p class="mb-2">${message}</p>
+                        <button class="btn btn-light btn-sm" onclick="loadCategories()">
+                            <i class="fas fa-redo"></i> إعادة المحاولة
+                        </button>
+                        <button class="btn btn-outline-light btn-sm ms-2" onclick="showPerformanceInfo()">
+                            <i class="fas fa-chart-line"></i> معلومات الأداء
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            errorState.style.display = 'block';
+            loadingState.style.display = 'none';
+            grid.style.display = 'none';
+        }
+
+        // Show performance information
+        function showPerformanceInfo() {
+            const metrics = googleSheetsAPI.getPerformanceMetrics();
+            const info = `
+                الأداء:
+                - الطلبات: ${metrics.requests}
+                - معدل النجاح: ${(100 - metrics.errorRate).toFixed(1)}%
+                - متوسط وقت الاستجابة: ${metrics.averageTime.toFixed(2)}ms
+                - معدل ضربات الكاش: ${metrics.cacheHitRate.toFixed(1)}%
+                - حجم الكاش: ${metrics.cacheStats.size}/${metrics.cacheStats.maxSize}
+            `;
+            alert(info);
+        }
+
+        // Preload data for better performance
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                googleSheetsAPI.preloadData();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
