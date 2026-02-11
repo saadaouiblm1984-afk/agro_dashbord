@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم العاملة</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .stat-icon.products { background: var(--primary-color); }
+        .stat-icon.categories { background: var(--secondary-color); }
+        .stat-icon.orders { background: var(--warning-color); }
+        .stat-icon.customers { background: var(--success-color); }
+        
+        .data-table {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            white-space: nowrap;
+        }
+        
+        .table td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+        
+        .header-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .sync-btn {
+            background: var(--success-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .sync-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        
+        .test-btn {
+            background: var(--secondary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+        
+        .test-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .badge {
+            font-size: 0.8em;
+            padding: 5px 10px;
+        }
+        
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .connection-status.connected {
+            background: var(--success-color);
+        }
+        
+        .connection-status.disconnected {
+            background: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                لوحة التحكم العاملة
+                <span id="connectionStatus" class="connection-status disconnected"></span>
+            </h1>
+            <p class="text-muted mb-4">متوافق مع Google Sheets (Real Data Script)</p>
+            
+            <button class="btn sync-btn" onclick="syncWorkingGoogleSheets()">
+                <i class="fas fa-sync me-2"></i>
+                مزامنة البيانات
+            </button>
+            <button class="btn test-btn" onclick="testWorkingConnection()">
+                <i class="fas fa-plug me-2"></i>
+                اختبار الاتصال
+            </button>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon products">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <h3 id="productsCount">0</h3>
+                    <p class="text-muted mb-0">المنتجات</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon categories">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h3 id="categoriesCount">0</h3>
+                    <p class="text-muted mb-0">الفئات</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon orders">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h3 id="ordersCount">0</h3>
+                    <p class="text-muted mb-0">الطلبات</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon customers">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 id="customersCount">0</h3>
+                    <p class="text-muted mb-0">العملاء</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Tables -->
+        <div class="row">
+            <!-- Products Table -->
+            <div class="col-lg-6">
+                <div class="data-table">
+                    <h5 class="mb-3">
+                        <i class="fas fa-box me-2"></i>
+                        المنتجات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف المنتج</th>
+                                    <th>اسم المنتج</th>
+                                    <th>السعر</th>
+                                    <th>الكمية</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">لا توجد بيانات</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Categories Table -->
+            <div class="col-lg-6">
+                <div class="data-table">
+                    <h5 class="mb-3">
+                        <i class="fas fa-tags me-2"></i>
+                        الفئات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف الفئة</th>
+                                    <th>اسم الفئة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTable">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">لا توجد بيانات</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Orders Table -->
+            <div class="col-lg-12">
+                <div class="data-table">
+                    <h5 class="mb-3">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        الطلبات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف الطلب</th>
+                                    <th>اسم العميل</th>
+                                    <th>الهاتف</th>
+                                    <th>السعر الإجمالي</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTable">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">لا توجد بيانات</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customers Table -->
+            <div class="col-lg-6">
+                <div class="data-table">
+                    <h5 class="mb-3">
+                        <i class="fas fa-users me-2"></i>
+                        العملاء
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف العميل</th>
+                                    <th>اسم العميل</th>
+                                    <th>الهاتف</th>
+                                    <th>البريد</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTable">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">لا توجد بيانات</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="working_integration.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Update UI with data
+        function updateUI() {
+            const products = window.workingDataManager.getProducts();
+            const categories = window.workingDataManager.getCategories();
+            const orders = window.workingDataManager.getOrders();
+            const customers = window.workingDataManager.getCustomers();
+            
+            // Update counts
+            document.getElementById('productsCount').textContent = products.length;
+            document.getElementById('categoriesCount').textContent = categories.length;
+            document.getElementById('ordersCount').textContent = orders.length;
+            document.getElementById('customersCount').textContent = customers.length;
+            
+            // Update connection status
+            const statusElement = document.getElementById('connectionStatus');
+            if (window.workingDataManager.isUsingGoogleSheets) {
+                statusElement.className = 'connection-status connected';
+                statusElement.title = 'متصل بـ Google Sheets';
+            } else {
+                statusElement.className = 'connection-status disconnected';
+                statusElement.title = 'بيانات وهمية';
+            }
+            
+            // Update products table
+            const productsTable = document.getElementById('productsTable');
+            if (products.length > 0) {
+                productsTable.innerHTML = products.map(product => `
+                    <tr>
+                        <td>${product.product_id || ''}</td>
+                        <td>${product.product_name || ''}</td>
+                        <td>${product.price || 0}</td>
+                        <td>${product.qtepack || 0}</td>
+                        <td><span class="badge bg-${product.status === 'active' ? 'success' : 'secondary'}">${product.status || 'active'}</span></td>
+                    </tr>
+                `).join('');
+            } else {
+                productsTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">لا توجد بيانات</td></tr>';
+            }
+            
+            // Update categories table
+            const categoriesTable = document.getElementById('categoriesTable');
+            if (categories.length > 0) {
+                categoriesTable.innerHTML = categories.map(category => `
+                    <tr>
+                        <td>${category.category_id || ''}</td>
+                        <td>${category.category_name || ''}</td>
+                    </tr>
+                `).join('');
+            } else {
+                categoriesTable.innerHTML = '<tr><td colspan="2" class="text-center text-muted">لا توجد بيانات</td></tr>';
+            }
+            
+            // Update orders table
+            const ordersTable = document.getElementById('ordersTable');
+            if (orders.length > 0) {
+                ordersTable.innerHTML = orders.map(order => `
+                    <tr>
+                        <td>${order.order_id || ''}</td>
+                        <td>${order.customer_name || ''}</td>
+                        <td>${order.phone || ''}</td>
+                        <td>${order.total_price || 0}</td>
+                        <td><span class="badge bg-${getStatusColor(order.order_status)}">${order.order_status || 'pending'}</span></td>
+                        <td>${order.order_date || ''}</td>
+                    </tr>
+                `).join('');
+            } else {
+                ordersTable.innerHTML = '<tr><td colspan="6" class="text-center text-muted">لا توجد بيانات</td></tr>';
+            }
+            
+            // Update customers table
+            const customersTable = document.getElementById('customersTable');
+            if (customers.length > 0) {
+                customersTable.innerHTML = customers.map(customer => `
+                    <tr>
+                        <td>${customer.customer_id || ''}</td>
+                        <td>${customer.name || ''}</td>
+                        <td>${customer.phone || ''}</td>
+                        <td>${customer.email || ''}</td>
+                    </tr>
+                `).join('');
+            } else {
+                customersTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">لا توجد بيانات</td></tr>';
+            }
+        }
+        
+        // Get status color
+        function getStatusColor(status) {
+            switch(status?.toLowerCase()) {
+                case 'completed': return 'success';
+                case 'pending': return 'warning';
+                case 'cancelled': return 'danger';
+                default: return 'secondary';
+            }
+        }
+        
+        // Refresh data function
+        function refreshData() {
+            updateUI();
+        }
+        
+        // Override sync function to update UI
+        const originalSync = window.syncWorkingGoogleSheets;
+        window.syncWorkingGoogleSheets = async function() {
+            await originalSync();
+            updateUI();
+        };
+        
+        // Override test function to update UI
+        const originalTest = window.testWorkingConnection;
+        window.testWorkingConnection = async function() {
+            await originalTest();
+            updateUI();
+        };
+        
+        // Initial UI update
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                updateUI();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

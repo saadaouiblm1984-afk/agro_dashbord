@@ -283,6 +283,7 @@
             text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             flex-grow: 1;
         }
@@ -975,6 +976,33 @@
             animation: fadeInUp 0.3s ease;
         }
         
+        /* Unavailable product styles */
+        .product-card-v2.unavailable-product {
+            position: relative;
+        }
+        
+        .product-unavailable-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.6);
+            z-index: 5;
+            pointer-events: none;
+            border-radius: 15px;
+        }
+        
+        .product-card-v2.unavailable-product .product-card-v2-actions {
+            z-index: 10;
+            pointer-events: auto;
+        }
+        
+        .product-card-v2.unavailable-product .product-card-v2-footer {
+            z-index: 6;
+            position: relative;
+        }
+        
         @keyframes fadeInUp {
             from {
                 transform: translateY(20px);
@@ -984,6 +1012,56 @@
                 transform: translateY(0);
                 opacity: 1;
             }
+        }
+        
+        /* Connection Status Indicator */
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 9999;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-status.online {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .connection-status.offline {
+            border-left: 4px solid var(--danger-color);
+            background: #fff5f5;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: block;
+        }
+        
+        .online .status-dot {
+            background-color: var(--success-color);
+            box-shadow: 0 0 0 rgba(39, 174, 96, 0.4);
+            animation: pulse-green 2s infinite;
+        }
+        
+        .offline .status-dot {
+            background-color: var(--danger-color);
+        }
+        
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(39, 174, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
         }
     </style>
 </head>
@@ -1041,17 +1119,8 @@
                             نظرة عامة
                         </h2>
                         <div>
-                            <button class="btn btn-primary btn-icon" onclick="syncGoogleSheets()" title="مزامنة Google Sheets">
-                                <i class="fas fa-sync"></i>
-                            </button>
-                            <button class="btn btn-info btn-icon" onclick="testGoogleSheetsConnection()" title="اختبار الاتصال">
-                                <i class="fas fa-plug"></i>
-                            </button>
-                            <button class="btn btn-warning btn-icon" onclick="toggleDataSource()" title="تبديل مصدر البيانات">
-                                <i class="fas fa-exchange-alt"></i>
-                            </button>
-                            <button class="btn btn-secondary btn-icon" onclick="refreshData()" title="تحديث">
-                                <i class="fas fa-refresh"></i>
+                            <button class="btn btn-primary btn-icon" onclick="refreshData()" title="تحديث ومزامنة">
+                                <i class="fas fa-sync-alt"></i>
                             </button>
                         </div>
                     </div>
@@ -1290,6 +1359,13 @@
                                     إضافة منتج
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Pills -->
+                    <div class="mb-4 overflow-auto">
+                        <div class="d-flex gap-2 pb-2" id="productCategoryPills">
+                            <!-- Pills will be loaded here -->
                         </div>
                     </div>
                     
@@ -1643,59 +1719,8 @@
                 </div>
                 
                 <div id="settings" class="page-content">
-                    <h2><i class="fas fa-cog me-2"></i>الإعدادات</h2>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <h6><i class="fas fa-sync me-2"></i>المزامنة</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-check form-switch mb-2">
-                                        <input class="form-check-input" type="checkbox" id="autoSync" checked>
-                                        <label class="form-check-label" for="autoSync">مزامنة تلقائية</label>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label small">Google Sheets URL</label>
-                                        <input type="url" class="form-control form-control-sm" id="sheetsUrl" placeholder="رابط الجدول">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <h6><i class="fas fa-palette me-2"></i>الواجهة</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-check form-switch mb-2">
-                                        <input class="form-check-input" type="checkbox" id="darkMode">
-                                        <label class="form-check-label" for="darkMode">وضع ليلي</label>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label small">اللغة</label>
-                                        <select class="form-select form-select-sm" id="language">
-                                            <option value="ar" selected>العربية</option>
-                                            <option value="en">English</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-body">
-                            <button type="button" class="btn btn-primary btn-sm me-2" onclick="saveSettings()">
-                                <i class="fas fa-save me-1"></i>حفظ
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="resetSettings()">
-                                <i class="fas fa-undo me-1"></i>إعادة تعيين
-                            </button>
-                        </div>
-                    </div>
+                    <h2>الإعدادات</h2>
+                    <p>صفحة الإعدادات قيد التطوير...</p>
                 </div>
             </div>
         </div>
@@ -1776,9 +1801,14 @@
             
             // Auto-save Google Sheets settings
             localStorage.setItem('googleSheetsSettings', JSON.stringify({
-                webAppUrl: 'https://script.google.com/macros/s/AKfycbxQmwApMVQ2ZYPIHj63AA-Z1p1wQihyCFe0ypJNMheJl7UN0acV7wZZwBSOrDptyBp8ig/exec',
+                webAppUrl: 'https://script.google.com/macros/s/AKfycbzqoujos-ZhO9WGBsjs9T72bNZN8kpGBRg6iLblA1f8DVy8QTWPzKsJZzFkz18-GPbSvA/exec',
                 spreadsheetId: '1PmqiCI3FXiP0rswBXda-ReJySE4VkHcmIh3rvzfAh5k'
             }));
+            
+            // Force reload settings to ensure new URL is used immediately
+            if (window.dataSyncManager) {
+                window.dataSyncManager.sheetsAPI.loadSettings();
+            }
             
             // Check internet connection first
             if (!navigator.onLine) {
@@ -1810,8 +1840,16 @@
                     // Start auto-sync if Google Sheets is available
                     if (window.dataSyncManager.isUsingGoogleSheets) {
                         console.log('Starting auto-sync with Google Sheets...');
-                        window.dataSyncManager.startAutoSync(5);
-                        console.log('Auto-sync started with 5-minute interval');
+                        // Sync every 20 seconds (approx 0.33 minutes)
+                        window.dataSyncManager.startAutoSync(0.33);
+                        console.log('Auto-sync started with 20-second interval');
+                        
+                        // Set up UI refresh interval to match sync
+                        setInterval(() => {
+                            const currentPage = document.querySelector('.page-content.active').id;
+                            if (currentPage === 'dashboard') loadDashboardData();
+                            else if (currentPage === 'orders') loadOrders();
+                        }, 20000);
                         
                         // Load initial data
                         await loadDashboardData();
@@ -1893,7 +1931,6 @@
                     
                 } catch (error) {
                     console.error('Initialization error:', error);
-                    showAlert('danger', 'حدث خطأ أثناء التحميل. جاري استخدام البيانات المحلية...');
                     
                     // Fallback to local data
                     try {
@@ -1962,9 +1999,27 @@
                 // Use Google Sheets if available, otherwise use mock API
                 if (window.dataSyncManager && window.dataSyncManager.isUsingGoogleSheets) {
                     // Load from Google Sheets
-                    const products = await window.dataSyncManager.sheetsAPI.getSheetData('products');
-                    const orders = await window.dataSyncManager.sheetsAPI.getSheetData('orders');
-                    const customers = await window.dataSyncManager.sheetsAPI.getSheetData('customers');
+                    let products, orders, customers;
+                    
+                    if (window.intelligentCache) {
+                        const pRes = await window.intelligentCache.get('products');
+                        products = pRes.success ? pRes.data : [];
+                        
+                        const oRes = await window.intelligentCache.get('orders');
+                        orders = oRes.success ? oRes.data : [];
+                        
+                        const cRes = await window.intelligentCache.get('customers');
+                        customers = cRes.success ? cRes.data : [];
+                    } else {
+                        const [productsData, ordersData, customersData] = await Promise.all([
+                            window.dataSyncManager.sheetsAPI.getSheetData('products'),
+                            window.dataSyncManager.sheetsAPI.getSheetData('orders'),
+                            window.dataSyncManager.sheetsAPI.getSheetData('customers')
+                        ]);
+                        products = productsData;
+                        orders = ordersData;
+                        customers = customersData;
+                    }
                     
                     console.log('Loaded data from Google Sheets:', {
                         products: products.length,
@@ -1975,11 +2030,17 @@
                     // Update statistics
                     document.getElementById('totalProducts').textContent = products.length;
                     document.getElementById('totalOrders').textContent = orders.length;
-                    document.getElementById('pendingOrders').textContent = orders.filter(order => order[3] === 'pending').length;
+                    document.getElementById('pendingOrders').textContent = orders.filter(order => {
+                        const status = (order[3] || '').toLowerCase();
+                        return status === 'pending' || status === 'معلق' || status === 'processing' || status === 'قيد المعالجة';
+                    }).length;
                     
                     const totalRevenue = orders.reduce((sum, order) => {
-                        const price = parseFloat(order[2]) || 0;
-                        return sum + price;
+                        const status = (order[3] || '').toLowerCase();
+                        if (status === 'delivered' || status === 'مكتمل' || status === 'تم التسليم') {
+                            return sum + (parseFloat(order[2]) || 0);
+                        }
+                        return sum;
                     }, 0);
                     document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue) + ' دج';
                     
@@ -2005,6 +2066,9 @@
                     }).join('');
                     
                     document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<p class="text-muted">لا توجد طلبات حديثة</p>';
+                    
+                    // Calculate Sales Statistics (Today, Weekly, Monthly)
+                    calculateSalesStats(orders, true);
                     
                 } else {
                     // Fallback to mock API
@@ -2040,7 +2104,6 @@
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
-                showAlert('danger', 'حدث خطأ أثناء تحميل البيانات');
                 
                 // Fallback to empty state
                 document.getElementById('totalProducts').textContent = '0';
@@ -2094,6 +2157,11 @@
                         window.dataSyncManager.sheetsAPI.getSheetData('category')
                     ]);
                     
+                    if (!Array.isArray(productsData)) {
+                        console.error('Products data is not an array:', productsData);
+                        throw new Error('تنسيق بيانات المنتجات غير صحيح');
+                    }
+
                     // Convert to product objects matching Google Sheets columns
                     products = productsData.map((row, index) => ({
                         id: index + 1,
@@ -2101,20 +2169,26 @@
                         category_id: row[1] || '',        // category_id column  
                         product_name: row[2] || '',      // product_name column
                         qtepack: parseInt(row[3]) || 1,  // qtepack column
+                        quantity_per_pack: parseInt(row[3]) || 1, // Ensure quantity_per_pack is set
                         price: parseFloat(row[4]) || 0,   // price column
                         image_url: row[5] || '',         // image_url column
                         status: row[6] || 'disponible', // status column
                         description: row[7] || ''        // description column
                     }));
                     
-                    // Store categories globally
-                    window.categories = categoriesData.map((row, index) => ({
-                        id: index + 1,
-                        category_id: row[0] || '',
-                        category_name: row[1] || '',
-                        image_url: row[2] || '',
-                        product_count: 0
-                    }));
+                    if (Array.isArray(categoriesData)) {
+                        // Store categories globally
+                        window.categories = categoriesData.map((row, index) => ({
+                            id: index + 1,
+                            category_id: row[0] || '',
+                            category_name: row[1] || '',
+                            image_url: row[2] || '',
+                            product_count: 0
+                        }));
+                    } else {
+                        console.warn('Categories data is not an array:', categoriesData);
+                        window.categories = [];
+                    }
                     
                     displayProducts();
                     
@@ -2138,12 +2212,12 @@
                 }
             } catch (error) {
                 console.error('Error loading products:', error);
-                showNotification('فشل في تحميل المنتجات', 'danger');
+                showNotification('فشل في تحميل المنتجات: ' + (error.message || 'خطأ غير معروف'), 'danger');
                 
                 // Fallback to mock data
                 products = [
-                    { id: 1, product_id: 'prod-0001', category_id: 'ctg-002', product_name: 'بينغو 1 ليتر غسالة', qtepack: 9, price: 314.00, image_url: 'https://res.cloudinary.com/dgtnnmpgz/image/upload/v1769111352/image_21_rtzqii.jpg', status: 'disponible', description: '' },
-                    { id: 2, product_id: 'prod-0002', category_id: 'ctg-002', product_name: 'بينغو 1.2ل', qtepack: 12, price: 264.00, image_url: 'https://res.cloudinary.com/dgtnnmpgz/image/upload/v1769111343/image_18_wcwphb.png', status: 'disponible', description: '' }
+                    { id: 1, product_id: 'prod-0001', category_id: 'ctg-002', product_name: 'بينغو 1 ليتر غسالة', qtepack: 9, quantity_per_pack: 9, price: 314.00, image_url: 'https://res.cloudinary.com/dgtnnmpgz/image/upload/v1769111352/image_21_rtzqii.jpg', status: 'disponible', description: '' },
+                    { id: 2, product_id: 'prod-0002', category_id: 'ctg-002', product_name: 'بينغو 1.2ل', qtepack: 12, quantity_per_pack: 12, price: 264.00, image_url: 'https://res.cloudinary.com/dgtnnmpgz/image/upload/v1769111343/image_18_wcwphb.png', status: 'disponible', description: '' }
                 ];
                 displayProducts();
             }
@@ -2152,8 +2226,10 @@
         // Load categories into filter dropdown
         function loadCategoriesIntoFilter() {
             const categoryFilter = document.getElementById('categoryFilter');
-            if (categoryFilter && window.categories) {
-                // Clear existing options except first two
+            const pillsContainer = document.getElementById('productCategoryPills');
+            
+            if (window.categories) {
+                if (categoryFilter) {
                 while (categoryFilter.options.length > 2) {
                     categoryFilter.remove(categoryFilter.options.length - 1);
                 }
@@ -2165,24 +2241,100 @@
                     option.textContent = `${category.category_name} (${category.product_count || 0} منتج)`;
                     categoryFilter.add(option);
                 });
+                }
                 
-                console.log(`📦 Loaded ${window.categories.length} categories into filter dropdown`);
+                // Populate Pills
+                if (pillsContainer) {
+                    let pillsHtml = `
+                        <button class="btn btn-primary rounded-pill px-3 category-pill active" 
+                                data-id="all"
+                                onclick="selectCategoryPill('all', this)">
+                            الكل
+                        </button>
+                    `;
+                    
+                    window.categories.forEach(category => {
+                        pillsHtml += `
+                            <button class="btn btn-outline-primary rounded-pill px-3 category-pill" 
+                                    data-id="${category.category_id}"
+                                    onclick="selectCategoryPill('${category.category_id}', this)">
+                                ${category.category_name}
+                            </button>
+                        `;
+                    });
+                    pillsContainer.innerHTML = pillsHtml;
+                }
+                
+                console.log(`📦 Loaded ${window.categories.length} categories into filters`);
+            }
+        }
+
+        // Select category via pill
+        function selectCategoryPill(categoryId, btn) {
+            // Update pills UI
+            document.querySelectorAll('.category-pill').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary', 'active');
+            
+            // Update dropdown and trigger filter
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (categoryFilter) {
+                categoryFilter.value = categoryId;
+                filterProducts();
             }
         }
         
         function generateProductCardHTML(product) {
             const category = window.categories && window.categories.find(cat => cat.category_id === product.category_id);
             const categoryName = category ? category.category_name : 'غير مصنف';
+            const qtePack = product.qtepack || product.quantity_per_pack || 1;
+            const totalPrice = product.price * qtePack;
+            
+            // Check if product is unavailable
+            const isUnavailable = product.status === 'غير متوفر' || product.status === 'inactive';
+            
+            // Status Badge Logic
+            let statusBadgeHTML = '';
+            if (isUnavailable) {
+                statusBadgeHTML = `<span class="product-status-badge status-badge bg-danger text-white">غير متوفر</span>`;
+            } else if (product.status && product.status !== 'disponible' && product.status !== 'active') {
+                statusBadgeHTML = `<span class="product-status-badge status-badge status-${product.status}">${getProductStatusText(product.status)}</span>`;
+            }
+            
+            // Card styling
+            const cardClass = isUnavailable ? 'unavailable-product' : '';
+            const overlayHTML = isUnavailable ? '<div class="product-unavailable-overlay"></div>' : '';
+            
+            // Button Logic
+            let actionButton = '';
+            if (isUnavailable) {
+                actionButton = `<button class="btn btn-secondary btn-sm w-100" disabled style="cursor: not-allowed;"><i class="fas fa-ban me-1"></i> غير متوفر</button>`;
+            } else {
+                actionButton = `<button class="btn btn-success btn-sm w-100" onclick="event.stopPropagation(); addToCart(${product.id})"><i class="fas fa-cart-plus me-1"></i> إضافة للسلة</button>`;
+            }
+            
+            // Image click handler
+            const imageOnClick = isUnavailable ? '' : `onclick="showProductModal(${product.id})"`;
+            
+            // Toggle button properties
+            const toggleIcon = isUnavailable ? 'fa-toggle-off' : 'fa-toggle-on';
+            const toggleTitle = isUnavailable ? 'تعيين كمتوفر' : 'تعيين كغير متوفر';
+            const toggleClass = isUnavailable ? 'text-secondary' : 'text-success';
 
             // Add stopPropagation to all button clicks to prevent the parent's onclick from firing
             return `
-                <div class="product-card-v2">
-                    <div class="product-card-v2-image-wrapper" onclick="showProductModal(${product.id})">
-                        <span class="product-status-badge status-badge status-${product.status}">${getProductStatusText(product.status)}</span>
+                <div class="product-card-v2 ${cardClass}">
+                    ${overlayHTML}
+                    <div class="product-card-v2-image-wrapper" ${imageOnClick}>
+                        ${statusBadgeHTML}
                         <img src="${product.image_url}" class="product-card-v2-image" alt="${product.product_name}"
                              onerror="this.src='https://via.placeholder.com/200x120?text=No+Image'">
                         <div class="product-card-v2-actions">
-                            <button class="btn btn-sm btn-light btn-icon" onclick="event.stopPropagation(); showProductModal(${product.id})" title="عرض التفاصيل"><i class="fas fa-eye"></i></button>
+                            ${!isUnavailable ? `<button class="btn btn-sm btn-light btn-icon" onclick="event.stopPropagation(); showProductModal(${product.id})" title="عرض التفاصيل"><i class="fas fa-eye"></i></button>` : ''}
+                            <button class="btn btn-sm btn-light btn-icon" onclick="event.stopPropagation(); toggleProductAvailability(${product.id})" title="${toggleTitle}"><i class="fas ${toggleIcon} ${toggleClass}"></i></button>
                             <button class="btn btn-sm btn-light btn-icon" onclick="event.stopPropagation(); editProduct(${product.id})" title="تعديل"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-sm btn-light btn-icon" onclick="event.stopPropagation(); deleteProduct(${product.id})" title="حذف"><i class="fas fa-trash"></i></button>
                         </div>
@@ -2192,13 +2344,14 @@
                         <h6 class="product-title" title="${product.product_name}">${product.product_name}</h6>
                         <div class="product-meta">
                             <span class="text-primary">${formatCurrency(product.price)} دج</span>
-                            <span title="القطع في العبوة"><i class="fas fa-box-open me-1"></i> ${product.qtepack || 1}</span>
+                            <span title="القطع في العبوة"><i class="fas fa-box-open me-1"></i> ${qtePack}</span>
+                        </div>
+                        <div class="text-muted small mt-2 text-center" style="font-size: 0.85rem; background-color: #f8f9fa; padding: 4px; border-radius: 4px;">
+                            <span class="fw-bold text-dark">${formatCurrency(totalPrice)} دج</span>
                         </div>
                     </div>
                     <div class="product-card-v2-footer">
-                        <button class="btn btn-success btn-sm w-100" onclick="event.stopPropagation(); addToCart(${product.id})">
-                            <i class="fas fa-cart-plus me-1"></i> إضافة للسلة
-                        </button>
+                        ${actionButton}
                     </div>
                 </div>
             `;
@@ -2220,6 +2373,22 @@
         // Load cart products
         async function loadCartProducts() {
             try {
+                console.log('Loading cart products...');
+                
+                // Use intelligent cache if available
+                if (window.intelligentCache) {
+                    const pRes = await window.intelligentCache.get('products');
+                    const cRes = await window.intelligentCache.get('categories');
+                    
+                    if (pRes.success) {
+                        products = pRes.data;
+                        if (cRes.success) window.categories = cRes.data;
+                        displayCartProducts();
+                        loadCategoriesIntoCartFilter();
+                        return;
+                    }
+                }
+
                 // Use Google Sheets if available, otherwise use mock API
                 if (window.dataSyncManager && window.dataSyncManager.isUsingGoogleSheets) {
                     // Load from Google Sheets
@@ -2238,7 +2407,7 @@
                         qtepack: parseInt(row[3]) || 1,
                         price: parseFloat(row[4]) || 0,
                         image_url: row[5] || '',
-                        status: row[6] || 'active',
+                        status: row[6] || 'disponible',
                         description: row[7] || ''
                     }));
                     
@@ -2277,7 +2446,6 @@
                 }
             } catch (error) {
                 console.error('Error loading cart products:', error);
-                showAlert('danger', 'حدث خطأ أثناء تحميل المنتجات');
             }
         }
         
@@ -2403,12 +2571,17 @@
                 totalSection.style.display = 'none';
                 cartCount.textContent = '0';
             } else {
-                cartItems.innerHTML = cart.map(item => `
+                cartItems.innerHTML = cart.map(item => {
+                    const quantityPerPack = item.qtepack || item.quantity_per_pack || 1;
+                    const itemTotal = item.price * item.quantity * quantityPerPack;
+                    return `
                     <div class="cart-item">
                         <div>
                             <strong class="text-primary">${item.product_name}</strong>
                             <br>
                             <small class="text-muted">${formatCurrency(item.price)} دج</small>
+                            <br>
+                            <small class="fw-bold text-success">الإجمالي: ${formatCurrency(itemTotal)} دج</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <div class="quantity-controls">
@@ -2424,7 +2597,7 @@
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
                 
                 totalSection.style.display = 'block';
                 updateTotals();
@@ -2473,8 +2646,7 @@
         // Update totals
         function updateTotals() {
             const subtotal = cart.reduce((sum, item) => {
-                const product = products.find(p => p.id === item.id);
-                const quantityPerPack = product ? (product.quantity_per_pack || 1) : 1;
+                const quantityPerPack = item.qtepack || item.quantity_per_pack || 1;
                 return sum + (item.price * item.quantity * quantityPerPack);
             }, 0);
             
@@ -2605,8 +2777,7 @@
                 order_id: orderId,
                 customer_id: customerId,
                 total_price: cart.reduce((sum, item) => {
-                    const product = products.find(p => p.id === item.id);
-                    const quantityPerPack = product ? (product.quantity_per_pack || 1) : 1;
+                    const quantityPerPack = item.qtepack || item.quantity_per_pack || 1;
                     return sum + (item.price * item.quantity * quantityPerPack);
                 }, 0),
                 order_status: 'pending',
@@ -2615,8 +2786,7 @@
             
             // Create order items
             const orderItems = cart.map((item, index) => {
-                const product = products.find(p => p.id === item.id);
-                const quantityPerPack = product ? (product.quantity_per_pack || 1) : 1;
+                const quantityPerPack = item.qtepack || item.quantity_per_pack || 1;
                 return {
                     item_id: 'ITEM' + Date.now() + '_' + index,
                     order_id: orderId,
@@ -2707,8 +2877,7 @@
             
             // Calculate total with quantity_per_pack
             const total = cart.reduce((sum, item) => {
-                const product = products.find(p => p.id === item.id);
-                const quantityPerPack = product ? (product.quantity_per_pack || 1) : 1;
+                const quantityPerPack = item.qtepack || item.quantity_per_pack || 1;
                 return sum + (item.price * item.quantity * quantityPerPack);
             }, 0);
             
@@ -2720,8 +2889,7 @@
             message += `📦 *المنتجات*:\n`;
             
             cart.forEach((item, index) => {
-                const product = products.find(p => p.id === item.id);
-                const quantityPerPack = product ? (product.quantity_per_pack || 1) : 1;
+                const quantityPerPack = item.qtepack || item.quantity_per_pack || 1;
                 const itemTotal = item.price * item.quantity * quantityPerPack;
                 
                 message += `${index + 1}. ${item.product_name}\n`;
@@ -2852,10 +3020,7 @@
             } else {
                 const product = products.find(p => p.id === productId);
                 cart.push({
-                    id: productId,
-                    product_id: product.product_id,
-                    product_name: product.product_name,
-                    price: product.price,
+                    ...product,
                     quantity: quantity
                 });
             }
@@ -3002,6 +3167,19 @@
             const categoryFilter = document.getElementById('categoryFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             
+            // Sync pills if dropdown changed manually
+            const pills = document.querySelectorAll('.category-pill');
+            if (pills.length > 0) {
+                pills.forEach(pill => {
+                    pill.classList.remove('btn-primary', 'active');
+                    pill.classList.add('btn-outline-primary');
+                    if (pill.dataset.id === categoryFilter || (categoryFilter === '' && pill.dataset.id === 'all')) {
+                        pill.classList.remove('btn-outline-primary');
+                        pill.classList.add('btn-primary', 'active');
+                    }
+                });
+            }
+            
             const filteredProducts = products.filter(product => {
                 const matchesSearch = !searchTerm || product.product_name.toLowerCase().includes(searchTerm) ||
                                    (product.description && product.description.toLowerCase().includes(searchTerm));
@@ -3018,6 +3196,38 @@
                 } else {
                     grid.innerHTML = filteredProducts.map(product => generateProductCardHTML(product)).join('');
                 }
+            }
+        }
+        
+        // Toggle product availability
+        async function toggleProductAvailability(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+            
+            const oldStatus = product.status;
+            const isUnavailable = product.status === 'غير متوفر' || product.status === 'inactive';
+            const newStatus = isUnavailable ? 'active' : 'inactive';
+            
+            // Optimistic update
+            product.status = newStatus;
+            displayProducts();
+            
+            if (window.dataSyncManager && window.dataSyncManager.isUsingGoogleSheets) {
+                try {
+                    await window.dataSyncManager.sheetsAPI.updateSheetData('products', {
+                        product_id: product.product_id,
+                        status: newStatus
+                    });
+                    showAlert('success', `تم تحديث حالة المنتج إلى ${newStatus === 'active' ? 'متوفر' : 'غير متوفر'}`);
+                } catch (error) {
+                    console.error('Error updating product status:', error);
+                    showAlert('danger', 'فشل تحديث الحالة في Google Sheets');
+                    // Revert
+                    product.status = oldStatus;
+                    displayProducts();
+                }
+            } else {
+                showAlert('success', `تم تحديث حالة المنتج محلياً`);
             }
         }
         
@@ -3153,7 +3363,40 @@
         }
         
         function refreshData() {
-            loadDashboardData();
+            const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
+            if(btnIcon) btnIcon.classList.add('fa-spin');
+            
+            (async () => {
+                try {
+                    if (window.intelligentCache) {
+                        // Force refresh cache from source
+                        await Promise.all([
+                            window.intelligentCache.get('products', true),
+                            window.intelligentCache.get('orders', true),
+                            window.intelligentCache.get('customers', true),
+                            window.intelligentCache.get('categories', true),
+                            window.intelligentCache.get('order_items', true)
+                        ]);
+                    } else if (window.dataSyncManager && window.dataSyncManager.isUsingGoogleSheets) {
+                        await window.dataSyncManager.syncAllData();
+                    }
+                    
+                    // Reload current page data
+                    const currentPage = document.querySelector('.page-content.active').id;
+                    if (currentPage === 'dashboard') loadDashboardData();
+                    else if (currentPage === 'products') loadProducts();
+                    else if (currentPage === 'orders') loadOrders();
+                    else if (currentPage === 'categories') loadCategories();
+                    else if (currentPage === 'cart') loadCartProducts();
+                    
+                    showAlert('success', 'تم التحديث والمزامنة بنجاح');
+                } catch (error) {
+                    console.error('Refresh error:', error);
+                    showAlert('danger', 'فشل التحديث');
+                } finally {
+                    if(btnIcon) btnIcon.classList.remove('fa-spin');
+                }
+            })();
         }
         
         function toggleDataSource() {
@@ -3406,10 +3649,26 @@
                 // Use Google Sheets if available, otherwise use mock API
                 if (window.dataSyncManager && window.dataSyncManager.isUsingGoogleSheets) {
                     // Load from Google Sheets
-                    const ordersData = await window.dataSyncManager.sheetsAPI.getSheetData('orders');
-                    const customersData = await window.dataSyncManager.sheetsAPI.getSheetData('customers');
-                    const orderItemsData = await window.dataSyncManager.sheetsAPI.getSheetData('orderItems');
-                    const productsData = await window.dataSyncManager.sheetsAPI.getSheetData('products');
+                    let ordersData, customersData, orderItemsData, productsData;
+                    
+                    if (window.intelligentCache) {
+                        const oRes = await window.intelligentCache.get('orders');
+                        ordersData = oRes.success ? oRes.data : [];
+                        
+                        const cRes = await window.intelligentCache.get('customers');
+                        customersData = cRes.success ? cRes.data : [];
+                        
+                        const oiRes = await window.intelligentCache.get('order_items');
+                        orderItemsData = oiRes.success ? oiRes.data : [];
+                        
+                        const pRes = await window.intelligentCache.get('products');
+                        productsData = pRes.success ? pRes.data : [];
+                    } else {
+                        ordersData = await window.dataSyncManager.sheetsAPI.getSheetData('orders');
+                        customersData = await window.dataSyncManager.sheetsAPI.getSheetData('customers');
+                        orderItemsData = await window.dataSyncManager.sheetsAPI.getSheetData('order_items');
+                        productsData = await window.dataSyncManager.sheetsAPI.getSheetData('products');
+                    }
                     
                     // Store global data for order details
                     window.orderItemsData = orderItemsData;
@@ -3444,7 +3703,6 @@
                 
             } catch (error) {
                 console.error('Error loading orders:', error);
-                showAlert('danger', 'حدث خطأ أثناء تحميل الطلبات');
             }
         }
         
@@ -3481,9 +3739,21 @@
         
         function updateOrdersStatistics() {
             const totalOrders = orders.length;
-            const pendingOrders = orders.filter(o => o.order_status === 'pending').length;
-            const completedOrders = orders.filter(o => o.order_status === 'delivered').length;
-            const totalRevenue = orders.reduce((sum, o) => sum + o.total_price, 0);
+            const pendingOrders = orders.filter(o => {
+                const status = (o.order_status || '').toLowerCase();
+                return status === 'pending' || status === 'معلق' || status === 'processing' || status === 'قيد المعالجة';
+            }).length;
+            const completedOrders = orders.filter(o => {
+                const status = (o.order_status || '').toLowerCase();
+                return status === 'delivered' || status === 'مكتمل' || status === 'تم التسليم';
+            }).length;
+            const totalRevenue = orders.reduce((sum, o) => {
+                const status = (o.order_status || '').toLowerCase();
+                if (status === 'delivered' || status === 'مكتمل' || status === 'تم التسليم') {
+                    return sum + (parseFloat(o.total_price) || 0);
+                }
+                return sum;
+            }, 0);
             
             // Use new IDs for the orders page statistics
             document.getElementById('orders-totalOrders').textContent = totalOrders;
@@ -3808,7 +4078,7 @@
                     updateOrderStatusInSheets(order.order_id, newStatus, notes).then(() => {
                         // Refresh orders from sheets after successful update
                         setTimeout(() => {
-                            loadOrders();
+                            refreshData(); // Force full refresh to ensure sync
                         }, 1000);
                     });
                 } else {
@@ -3829,7 +4099,21 @@
                     throw new Error('Google Sheets API not available');
                 }
         
-                const ordersData = await window.dataSyncManager.sheetsAPI.getSheetData('orders');
+                // Optimization: Try to get data from cache first to find the row index
+                let ordersData;
+                if (window.intelligentCache) {
+                    const cacheRes = await window.intelligentCache.get('orders');
+                    if (cacheRes.success) {
+                        ordersData = cacheRes.data;
+                        console.log('Using cached orders data for update');
+                    }
+                }
+                
+                // Fallback to API if cache missing
+                if (!ordersData) {
+                    ordersData = await window.dataSyncManager.sheetsAPI.getSheetData('orders');
+                }
+                
                 if (!ordersData || ordersData.length === 0) {
                     throw new Error('No orders data found');
                 }
@@ -4451,9 +4735,7 @@
         }
 
         // Update Sales Statistics
-        function updateSalesStatistics() {
-            // Calculate sales data from orders
-            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        function calculateSalesStats(ordersData, isArrayFormat = false) {
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -4464,34 +4746,67 @@
             let monthlySales = 0;
             let totalSales = 0;
             
-            orders.forEach(order => {
-                const orderDate = new Date(order.created_at);
-                const orderTotal = parseFloat(order.total) || 0;
+            ordersData.forEach(order => {
+                let orderDate, orderTotal, orderStatus;
                 
-                totalSales += orderTotal;
-                
-                if (orderDate >= today) {
-                    todaySales += orderTotal;
+                if (isArrayFormat) {
+                    // Google Sheets format: [id, customer_id, total, status, date, items]
+                    const dateStr = order[4];
+                    // Try to parse date DD/MM/YYYY
+                    if (dateStr && typeof dateStr === 'string' && dateStr.includes('/')) {
+                        const parts = dateStr.split(' ')[0].split('/');
+                        if (parts.length === 3) {
+                            orderDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        } else {
+                            orderDate = new Date(dateStr);
+                        }
+                    } else {
+                        orderDate = new Date(dateStr);
+                    }
+                    
+                    orderTotal = parseFloat(order[2]) || 0;
+                    orderStatus = order[3];
+                } else {
+                    // Object format
+                    orderDate = new Date(order.order_date || order.created_at || new Date());
+                    orderTotal = parseFloat(order.total_price || order.total) || 0;
+                    orderStatus = order.order_status || order.status;
                 }
                 
-                if (orderDate >= weekAgo) {
-                    weeklySales += orderTotal;
-                }
-                
-                if (orderDate >= monthAgo) {
-                    monthlySales += orderTotal;
+                // Filter by status 'delivered' (completed)
+                if (orderStatus === 'delivered' || orderStatus === 'مكتمل' || orderStatus === 'تم التسليم') {
+                    totalSales += orderTotal;
+                    
+                    if (orderDate >= today) {
+                        todaySales += orderTotal;
+                    }
+                    
+                    if (orderDate >= weekAgo) {
+                        weeklySales += orderTotal;
+                    }
+                    
+                    if (orderDate >= monthAgo) {
+                        monthlySales += orderTotal;
+                    }
                 }
             });
             
             // Update the DOM with formatted numbers
-            document.getElementById('todaySales').textContent = formatCurrency(todaySales);
-            document.getElementById('weeklySales').textContent = formatCurrency(weeklySales);
-            document.getElementById('monthlySales').textContent = formatCurrency(monthlySales);
-            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+            const todayEl = document.getElementById('todaySales');
+            if(todayEl) todayEl.textContent = formatCurrency(todaySales);
+            
+            const weeklyEl = document.getElementById('weeklySales');
+            if(weeklyEl) weeklyEl.textContent = formatCurrency(weeklySales);
+            
+            const monthlyEl = document.getElementById('monthlySales');
+            if(monthlyEl) monthlyEl.textContent = formatCurrency(monthlySales);
+            
+            const totalEl = document.getElementById('totalSales');
+            if(totalEl) totalEl.textContent = formatCurrency(totalSales);
         }
 
         // Auto-update sales statistics every 5 minutes instead of 30 seconds
-        setInterval(updateSalesStatistics, 300000);
+        // setInterval(updateSalesStatistics, 300000); // Handled by loadDashboardData
         
         // Notification control
         let notificationsEnabled = true;
@@ -4541,7 +4856,7 @@
         };
         
         // Initial call to populate sales statistics
-        updateSalesStatistics();
+        // updateSalesStatistics(); // Handled by loadDashboardData
     </script>
     
     <!-- Notification Container -->
@@ -4551,6 +4866,12 @@
     <div class="sound-indicator" id="soundIndicator">
         <i class="fas fa-volume-up"></i>
         <span>تم تشغيل صوت التنبيه</span>
+    </div>
+    
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status online">
+        <span class="status-dot"></span>
+        <span id="connectionText">متصل</span>
     </div>
     
     <!-- Audio for notifications -->
@@ -4603,68 +4924,5 @@
             </div>
         </div>
     </div>
-</body>
-</html>
-
-<script>
-    // Settings functions
-    function saveSettings() {
-        const settings = {
-            sync: {
-                autoSync: document.getElementById('autoSync').checked,
-                sheetsUrl: document.getElementById('sheetsUrl').value
-            },
-            ui: {
-                language: document.getElementById('language').value,
-                darkMode: document.getElementById('darkMode').checked
-            }
-        };
-        
-        localStorage.setItem('dashboardSettings', JSON.stringify(settings));
-        showAlert('success', 'تم حفظ الإعدادات');
-        applySettings(settings);
-    }
-    
-    function loadSettings() {
-        const savedSettings = localStorage.getItem('dashboardSettings');
-        if (savedSettings) {
-            const settings = JSON.parse(savedSettings);
-            
-            document.getElementById('autoSync').checked = settings.sync?.autoSync !== false;
-            document.getElementById('sheetsUrl').value = settings.sync?.sheetsUrl || '';
-            document.getElementById('language').value = settings.ui?.language || 'ar';
-            document.getElementById('darkMode').checked = settings.ui?.darkMode || false;
-            
-            applySettings(settings);
-        }
-    }
-    
-    function applySettings(settings) {
-        if (settings.ui?.darkMode) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
-        }
-        
-        if (settings.ui?.language === 'en') {
-            document.documentElement.setAttribute('dir', 'ltr');
-            document.documentElement.setAttribute('lang', 'en');
-        } else {
-            document.documentElement.setAttribute('dir', 'rtl');
-            document.documentElement.setAttribute('lang', 'ar');
-        }
-    }
-    
-    function resetSettings() {
-        if (confirm('هل أنت متأكد من إعادة تعيين الإعدادات؟')) {
-            localStorage.removeItem('dashboardSettings');
-            location.reload();
-        }
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        loadSettings();
-    });
-</script>
 </body>
 </html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم العاملة</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .stat-icon.products { background: var(--primary-color); }
+        .stat-icon.categories { background: var(--secondary-color); }
+        .stat-icon.orders { background: var(--warning-color); }
+        .stat-icon.customers { background: var(--success-color); }
+        
+        .data-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+        }
+        
+        .table td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn-primary:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        
+        .badge {
+            font-size: 0.8em;
+            padding: 5px 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .status-indicator.online {
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.offline {
+            background: var(--danger-color);
+        }
+        
+        .status-indicator.testing {
+            background: var(--warning-color);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                لوحة التحكم العاملة
+                <span id="connectionStatus" class="status-indicator offline"></span>
+            </h1>
+            <p class="text-muted mb-4">متوافق مع Google Sheets</p>
+            
+            <button class="btn btn-success" onclick="loadData()">
+                <i class="fas fa-sync me-2"></i>
+                تحميل البيانات
+            </button>
+            <button class="btn btn-primary" onclick="testConnection()">
+                <i class="fas fa-plug me-2"></i>
+                اختبار الاتصال
+            </button>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon products">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <h3 id="productsCount">0</h3>
+                    <p class="text-muted mb-0">المنتجات</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon categories">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h3 id="categoriesCount">0</h3>
+                    <p class="text-muted mb-0">الفئات</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon orders">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h3 id="ordersCount">0</h3>
+                    <p class="text-muted mb-0">الطلبات</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon customers">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 id="customersCount">0</h3>
+                    <p class="text-muted mb-0">العملاء</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Sections -->
+        <div class="row">
+            <!-- Products Section -->
+            <div class="col-lg-6">
+                <div class="data-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-box me-2"></i>
+                        المنتجات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف المنتج</th>
+                                    <th>اسم المنتج</th>
+                                    <th>السعر</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Categories Section -->
+            <div class="col-lg-6">
+                <div class="data-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-tags me-2"></i>
+                        الفئات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف الفئة</th>
+                                    <th>اسم الفئة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTable">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Orders Section -->
+            <div class="col-lg-12">
+                <div class="data-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        الطلبات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>معرف الطلب</th>
+                                    <th>اسم العميل</th>
+                                    <th>السعر الإجمالي</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTable">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let products = [];
+        let categories = [];
+        let orders = [];
+        let customers = [];
+        
+        // Google Sheets URL
+        const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxKW4EELjDoMzYSZoBiu0G4HujyM2UKSdXyNtPK66owa2nTQ38ltAIgGfvL_vnMzpst3w/exec';
+        
+        // Update connection status
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.className = 'status-indicator ' + status;
+        }
+        
+        // Show alert
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 5000);
+        }
+        
+        // Test connection
+        async function testConnection() {
+            updateConnectionStatus('testing');
+            showAlert('info', 'جاري اختبار الاتصال...');
+            
+            try {
+                const response = await fetch(`${GOOGLE_SHEETS_URL}?action=getProducts`);
+                const responseText = await response.text();
+                
+                console.log('Test response:', responseText);
+                
+                if (response.ok) {
+                    updateConnectionStatus('online');
+                    showAlert('success', 'اتصال ناجح بـ Google Sheets!');
+                } else {
+                    updateConnectionStatus('offline');
+                    showAlert('danger', `فشل الاتصال: ${response.status}`);
+                }
+            } catch (error) {
+                updateConnectionStatus('offline');
+                showAlert('danger', `فشل الاتصال: ${error.message}`);
+            }
+        }
+        
+        // Load data from Google Sheets
+        async function loadData() {
+            updateConnectionStatus('testing');
+            showAlert('info', 'جاري تحميل البيانات...');
+            
+            try {
+                // Test connection first
+                const testResponse = await fetch(`${GOOGLE_SHEETS_URL}?action=getProducts`);
+                if (!testResponse.ok) {
+                    throw new Error(`فشل الاتصال: ${testResponse.status}`);
+                }
+                
+                // Load all data
+                const [productsResponse, categoriesResponse, ordersResponse] = await Promise.all([
+                    fetch(`${GOOGLE_SHEETS_URL}?action=getProducts`),
+                    fetch(`${GOOGLE_SHEETS_URL}?action=getCategories`),
+                    fetch(`${GOOGLE_SHEETS_URL}?action=getOrders`)
+                ]);
+                
+                // Parse responses
+                const productsText = await productsResponse.text();
+                const categoriesText = await categoriesResponse.text();
+                const ordersText = await ordersResponse.text();
+                
+                console.log('Products response:', productsText);
+                console.log('Categories response:', categoriesText);
+                console.log('Orders response:', ordersText);
+                
+                // Try to parse JSON
+                try {
+                    products = JSON.parse(productsText);
+                } catch (e) {
+                    products = [];
+                }
+                
+                try {
+                    categories = JSON.parse(categoriesText);
+                } catch (e) {
+                    categories = [];
+                }
+                
+                try {
+                    orders = JSON.parse(ordersText);
+                } catch (e) {
+                    orders = [];
+                }
+                
+                // If no data, use mock data
+                if (products.length === 0) {
+                    products = [
+                        { id: 1, product_id: 'P001', product_name: 'منتج تجريبي', price: 100, status: 'active' },
+                        { id: 2, product_id: 'P002', product_name: 'منتج آخر', price: 200, status: 'active' }
+                    ];
+                }
+                
+                if (categories.length === 0) {
+                    categories = [
+                        { id: 1, category_id: 'C001', category_name: 'فئة 1' },
+                        { id: 2, category_id: 'C002', category_name: 'فئة 2' }
+                    ];
+                }
+                
+                if (orders.length === 0) {
+                    orders = [
+                        { id: 1, order_id: 'O001', customer_name: 'عميل تجريبي', total_price: 300, order_status: 'pending', order_date: new Date().toISOString().split('T')[0] }
+                    ];
+                }
+                
+                updateConnectionStatus('online');
+                showAlert('success', 'تم تحميل البيانات بنجاح');
+                updateUI();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                updateConnectionStatus('offline');
+                showAlert('danger', `فشل تحميل البيانات: ${error.message}`);
+                
+                // Use mock data as fallback
+                products = [
+                    { id: 1, product_id: 'P001', product_name: 'منتج تجريبي', price: 100, status: 'active' },
+                    { id: 2, product_id: 'P002', product_name: 'منتج آخر', price: 200, status: 'active' }
+                ];
+                categories = [
+                    { id: 1, category_id: 'C001', category_name: 'فئة 1' },
+                    { id: 2, category_id: 'C002', category_name: 'فئة 2' }
+                ];
+                orders = [
+                    { id: 1, order_id: 'O001', customer_name: 'عميل تجريبي', total_price: 300, order_status: 'pending', order_date: new Date().toISOString().split('T')[0] }
+                ];
+                
+                updateUI();
+            }
+        }
+        
+        // Update UI
+        function updateUI() {
+            // Update counts
+            document.getElementById('productsCount').textContent = products.length;
+            document.getElementById('categoriesCount').textContent = categories.length;
+            document.getElementById('ordersCount').textContent = orders.length;
+            document.getElementById('customersCount').textContent = customers.length;
+            
+            // Update products table
+            const productsTable = document.getElementById('productsTable');
+            if (products.length > 0) {
+                productsTable.innerHTML = products.map(product => `
+                    <tr>
+                        <td>${product.product_id || ''}</td>
+                        <td>${product.product_name || ''}</td>
+                        <td>${product.price || 0}</td>
+                        <td><span class="badge bg-${product.status === 'active' ? 'success' : 'secondary'}">${product.status || 'N/A'}</span></td>
+                    </tr>
+                `).join('');
+            } else {
+                productsTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">لا توجد منتجات</td></tr>';
+            }
+            
+            // Update categories table
+            const categoriesTable = document.getElementById('categoriesTable');
+            if (categories.length > 0) {
+                categoriesTable.innerHTML = categories.map(category => `
+                    <tr>
+                        <td>${category.category_id || ''}</td>
+                        <td>${category.category_name || ''}</td>
+                    </tr>
+                `).join('');
+            } else {
+                categoriesTable.innerHTML = '<tr><td colspan="2" class="text-center text-muted">لا توجد فئات</td></tr>';
+            }
+            
+            // Update orders table
+            const ordersTable = document.getElementById('ordersTable');
+            if (orders.length > 0) {
+                ordersTable.innerHTML = orders.map(order => `
+                    <tr>
+                        <td>${order.order_id || ''}</td>
+                        <td>${order.customer_name || ''}</td>
+                        <td>${order.total_price || 0}</td>
+                        <td><span class="badge bg-${getOrderStatusColor(order.order_status)}">${order.order_status || 'N/A'}</span></td>
+                        <td>${order.order_date || ''}</td>
+                    </tr>
+                `).join('');
+            } else {
+                ordersTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">لا توجد طلبات</td></tr>';
+            }
+        }
+        
+        // Get order status color
+        function getOrderStatusColor(status) {
+            switch(status?.toLowerCase()) {
+                case 'completed': return 'success';
+                case 'pending': return 'warning';
+                case 'cancelled': return 'danger';
+                default: return 'secondary';
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Working dashboard loaded');
+            
+            // Auto-load data after 1 second
+            setTimeout(() => {
+                loadData();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

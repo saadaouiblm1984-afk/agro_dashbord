@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>API Test Dashboard</h1>
+    
+    <div class="test-section">
+        <h2>Test Products API</h2>
+        <button onclick="testProductsAPI()">Test /admin/api/products</button>
+        <div id="productsResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Stats API</h2>
+        <button onclick="testStatsAPI()">Test /admin/api/stats</button>
+        <div id="statsResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Orders API</h2>
+        <button onclick="testOrdersAPI()">Test /admin/api/orders</button>
+        <div id="ordersResult"></div>
+    </div>
+
+    <script>
+        async function testAPI(url, resultId) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                console.log(`Testing ${url}...`);
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Success!</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Data length: ${Array.isArray(data) ? data.length : 'N/A'}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+        
+        function testProductsAPI() {
+            testAPI('/admin/api/products', 'productsResult');
+        }
+        
+        function testStatsAPI() {
+            testAPI('/admin/api/stats', 'statsResult');
+        }
+        
+        function testOrdersAPI() {
+            testAPI('/admin/api/orders', 'ordersResult');
+        }
+        
+        // Test all APIs on page load
+        window.onload = function() {
+            setTimeout(() => {
+                testProductsAPI();
+                testStatsAPI();
+                testOrdersAPI();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

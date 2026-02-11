@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم النظيفة</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .config-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn-primary:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .status-indicator.online {
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.offline {
+            background: var(--danger-color);
+        }
+        
+        .status-indicator.testing {
+            background: var(--warning-color);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid var(--secondary-color);
+        }
+        
+        .result-box.success {
+            border-left-color: var(--success-color);
+            background: #d4edda;
+        }
+        
+        .result-box.error {
+            border-left-color: var(--danger-color);
+            background: #f8d7da;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                لوحة التحكم النظيفة
+                <span id="connectionStatus" class="status-indicator offline"></span>
+            </h1>
+            <p class="text-muted mb-4">اختبار الاتصال بالإنترنت و Google Sheets</p>
+        </div>
+        
+        <!-- Configuration Section -->
+        <div class="config-section">
+            <h5 class="mb-3">
+                <i class="fas fa-cog me-2"></i>
+                إعدادات الاتصال
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="webAppUrl" class="form-label">رابط Web App:</label>
+                        <input type="text" class="form-control" id="webAppUrl" 
+                               value="https://script.google.com/macros/s/AKfycbxKW4EELjDoMzYSZoBiu0G4HujyM2UKSdXyNtPK66owa2nTQ38ltAIgGfvL_vnMzpst3w/exec"
+                               placeholder="أدخل رابط Web App هنا">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="testUrl" class="form-label">رابط اختبار:</label>
+                        <input type="text" class="form-control" id="testUrl" 
+                               value="https://jsonplaceholder.typicode.com/posts/1"
+                               placeholder="رابط لاختبار الاتصال بالإنترنت">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    <i class="fas fa-save me-2"></i>
+                    حفظ الإعدادات
+                </button>
+                <button class="btn btn-success" onclick="testInternetConnection()">
+                    <i class="fas fa-wifi me-2"></i>
+                    اختبار الاتصال بالإنترنت
+                </button>
+                <button class="btn btn-success" onclick="testGoogleSheetsConnection()">
+                    <i class="fas fa-cloud me-2"></i>
+                    اختبار Google Sheets
+                </button>
+            </div>
+        </div>
+        
+        <!-- Test Results Section -->
+        <div class="test-section">
+            <h5 class="mb-3">
+                <i class="fas fa-vial me-2"></i>
+                نتائج الاختبار
+            </h5>
+            <div id="testResults">
+                <p class="text-muted text-center">اضغط على أزرار الاختبار لعرض النتائج هنا</p>
+            </div>
+        </div>
+        
+        <!-- Data Display Section -->
+        <div class="test-section">
+            <h5 class="mb-3">
+                <i class="fas fa-database me-2"></i>
+                البيانات المستلمة
+            </h5>
+            <div id="dataDisplay">
+                <p class="text-muted text-center">سيتم عرض البيانات هنا بعد الاتصال الناجح</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let webAppUrl = 'https://script.google.com/macros/s/AKfycbxKW4EELjDoMzYSZoBiu0G4HujyM2UKSdXyNtPK66owa2nTQ38ltAIgGfvL_vnMzpst3w/exec';
+        let testUrl = 'https://jsonplaceholder.typicode.com/posts/1';
+        
+        // Load settings from localStorage
+        function loadSettings() {
+            const savedWebAppUrl = localStorage.getItem('webAppUrl');
+            const savedTestUrl = localStorage.getItem('testUrl');
+            
+            if (savedWebAppUrl) {
+                webAppUrl = savedWebAppUrl;
+                document.getElementById('webAppUrl').value = savedWebAppUrl;
+            }
+            
+            if (savedTestUrl) {
+                testUrl = savedTestUrl;
+                document.getElementById('testUrl').value = savedTestUrl;
+            }
+        }
+        
+        // Save settings to localStorage
+        function saveSettings() {
+            webAppUrl = document.getElementById('webAppUrl').value;
+            testUrl = document.getElementById('testUrl').value;
+            
+            localStorage.setItem('webAppUrl', webAppUrl);
+            localStorage.setItem('testUrl', testUrl);
+            
+            showResult('success', 'تم حفظ الإعدادات بنجاح');
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.className = 'status-indicator ' + status;
+        }
+        
+        // Show test result
+        function showResult(type, title, message, data = null) {
+            const resultsDiv = document.getElementById('testResults');
+            const dataHtml = data ? `<div class="code-block">${JSON.stringify(data, null, 2)}</div>` : '';
+            
+            resultsDiv.innerHTML = `
+                <div class="result-box ${type}">
+                    <h6><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>${title}</h6>
+                    <p>${message}</p>
+                    ${dataHtml}
+                </div>
+            `;
+        }
+        
+        // Show data display
+        function showDataDisplay(data) {
+            const dataDiv = document.getElementById('dataDisplay');
+            
+            if (Array.isArray(data)) {
+                dataDiv.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    ${Object.keys(data[0] || {}).map(key => `<th>${key}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.slice(0, 10).map(item => 
+                                    `<tr>${Object.values(item).map(val => `<td>${val}</td>`).join('')}</tr>`
+                                ).join('')}
+                            </tbody>
+                        </table>
+                        ${data.length > 10 ? `<p class="text-muted">عرض أول 10 من ${data.length} عنصر</p>` : ''}
+                    </div>
+                `;
+            } else {
+                dataDiv.innerHTML = `<div class="code-block">${JSON.stringify(data, null, 2)}</div>`;
+            }
+        }
+        
+        // Test internet connection
+        async function testInternetConnection() {
+            updateConnectionStatus('testing');
+            showResult('', 'جاري الاختبار...', 'جاري اختبار الاتصال بالإنترنت...');
+            
+            try {
+                const response = await fetch(testUrl);
+                const data = await response.json();
+                
+                updateConnectionStatus('online');
+                showResult('success', 'اتصال الإنترنت ناجح', `تم الاتصال بالإنترنت بنجاح. الحالة: ${response.status}`, data);
+                
+            } catch (error) {
+                updateConnectionStatus('offline');
+                showResult('error', 'فشل اتصال الإنترنت', `فشل الاتصال بالإنترنت: ${error.message}`);
+            }
+        }
+        
+        // Test Google Sheets connection
+        async function testGoogleSheetsConnection() {
+            updateConnectionStatus('testing');
+            showResult('', 'جاري الاختبار...', 'جاري اختبار الاتصال بـ Google Sheets...');
+            
+            try {
+                const response = await fetch(`${webAppUrl}?action=getProducts`);
+                const responseText = await response.text();
+                
+                console.log('Google Sheets Response:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    data = responseText;
+                }
+                
+                if (response.ok) {
+                    updateConnectionStatus('online');
+                    showResult('success', 'اتصال Google Sheets ناجح', `تم الاتصال بـ Google Sheets بنجاح. الحالة: ${response.status}`, data);
+                    showDataDisplay(data);
+                } else {
+                    updateConnectionStatus('offline');
+                    showResult('error', 'فشل اتصال Google Sheets', `فشل الاتصال بـ Google Sheets. الحالة: ${response.status}`, responseText);
+                }
+                
+            } catch (error) {
+                updateConnectionStatus('offline');
+                showResult('error', 'فشل اتصال Google Sheets', `فشل الاتصال بـ Google Sheets: ${error.message}`);
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            
+            // Auto-test internet connection
+            setTimeout(() => {
+                testInternetConnection();
+            }, 1000);
+            
+            // Auto-test Google Sheets
+            setTimeout(() => {
+                testGoogleSheetsConnection();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

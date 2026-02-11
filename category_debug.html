@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصحيح أخطاء الأصناف</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .log-output {
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        
+        .status-success { background: var(--success-color); }
+        .status-error { background: var(--danger-color); }
+        .status-warning { background: var(--warning-color); }
+        .status-info { background: var(--secondary-color); }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="text-center mb-4">
+            <h1 class="text-white">
+                <i class="fas fa-bug"></i> تصحيح أخطاء تحميل الأصناف
+            </h1>
+            <p class="text-white-50">أداة تشخيص لمشاكل Google Sheets API</p>
+        </div>
+
+        <!-- Connection Test -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-plug"></i> اختبار الاتصال</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button class="btn btn-primary w-100" onclick="testConnection()">
+                            <i class="fas fa-play"></i> اختبار الاتصال بـ Google Sheets
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-info w-100" onclick="testCategoryEndpoint()">
+                            <i class="fas fa-tags"></i> اختبار نقطة نهاية الأصناف
+                        </button>
+                    </div>
+                </div>
+                <div id="connectionStatus" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- API Configuration -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-cog"></i> إعدادات API</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Web App URL:</label>
+                        <input type="text" class="form-control" id="webAppUrl" 
+                               value="https://script.google.com/macros/s/AKfycbxQmwApMVQ2ZYPIHj63AA-Z1p1wQihyCFe0ypJNMheJl7UN0acV7wZZwBSOrDptyBp8ig/exec">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Spreadsheet ID:</label>
+                        <input type="text" class="form-control" id="spreadsheetId" placeholder="اختياري">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> حفظ الإعدادات
+                    </button>
+                    <button class="btn btn-warning ms-2" onclick="resetSettings()">
+                        <i class="fas fa-undo"></i> إعادة تعيين
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual API Test -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-terminal"></i> اختبار API يدوي</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" id="testUrl" 
+                               placeholder="أدخل URL للاختبار">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-warning w-100" onclick="testManualUrl()">
+                            <i class="fas fa-paper-plane"></i> إرسال طلب
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="useOriginalAPI">
+                        <label class="form-check-label" for="useOriginalAPI">
+                            استخدام API الأصلي (google_sheets_integration.js)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debug Log -->
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> سجل التصحيح</h5>
+                <button class="btn btn-sm btn-outline-light" onclick="clearLog()">
+                    <i class="fas fa-trash"></i> مسح السجل
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div id="debugLog" class="log-output">
+                    <div style="color: #888;">جاهز لتسجيل الأحداث...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fallback Data -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-database"></i> بيانات احتياطية</h5>
+            </div>
+            <div class="card-body">
+                <p>في حال فشل الاتصال بـ Google Sheets، يمكنك استخدام البيانات المحلية:</p>
+                <button class="btn btn-success" onclick="loadFallbackData()">
+                    <i class="fas fa-download"></i> تحميل البيانات الاحتياطية
+                </button>
+                <button class="btn btn-outline-success ms-2" onclick="testWithLocalData()">
+                    <i class="fas fa-play"></i> اختبار بالبيانات المحلية
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="text-center mt-4">
+            <a href="category.html" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> العودة لصفحة الأصناف
+            </a>
+            <a href="index.html" class="btn btn-secondary ms-2">
+                <i class="fas fa-home"></i> الرئيسية
+            </a>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Debug logging
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = `status-${type}`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `
+                <span style="color: #888;">[${timestamp}]</span>
+                <span class="status-indicator ${statusClass}"></span>
+                <span>${message}</span>
+            `;
+            
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '<div style="color: #888;">جاهز لتسجيل الأحداث...</div>';
+        }
+
+        // Load settings
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('googleSheetsSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('webAppUrl').value = settings.webAppUrl || '';
+                document.getElementById('spreadsheetId').value = settings.spreadsheetId || '';
+                log('تم تحميل الإعدادات المحفوظة', 'success');
+            } else {
+                log('لا توجد إعدادات محفوظة', 'warning');
+            }
+        }
+
+        // Save settings
+        function saveSettings() {
+            const settings = {
+                webAppUrl: document.getElementById('webAppUrl').value,
+                spreadsheetId: document.getElementById('spreadsheetId').value
+            };
+            
+            localStorage.setItem('googleSheetsSettings', JSON.stringify(settings));
+            log('تم حفظ الإعدادات بنجاح', 'success');
+        }
+
+        // Reset settings
+        function resetSettings() {
+            localStorage.removeItem('googleSheetsSettings');
+            document.getElementById('webAppUrl').value = 'https://script.google.com/macros/s/AKfycbxQmwApMVQ2ZYPIHj63AA-Z1p1wQihyCFe0ypJNMheJl7UN0acV7wZZwBSOrDptyBp8ig/exec';
+            document.getElementById('spreadsheetId').value = '';
+            log('تم إعادة تعيين الإعدادات', 'warning');
+        }
+
+        // Test connection
+        async function testConnection() {
+            const webAppUrl = document.getElementById('webAppUrl').value;
+            if (!webAppUrl) {
+                log('يرجى إدخال Web App URL', 'error');
+                return;
+            }
+
+            log('جاري اختبار الاتصال...', 'info');
+            
+            try {
+                const testUrl = `${webAppUrl}?action=getProducts`;
+                log(`إرسال طلب إلى: ${testUrl}`, 'info');
+                
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                log(`استجابة HTTP: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log(`تم استلام ${data.length} صف من البيانات`, 'success');
+                log(`عينة البيانات: ${JSON.stringify(data.slice(0, 2))}`, 'info');
+                
+                document.getElementById('connectionStatus').innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> الاتصال ناجح! تم استلام ${data.length} صف
+                    </div>
+                `;
+                
+            } catch (error) {
+                log(`خطأ في الاتصال: ${error.message}`, 'error');
+                document.getElementById('connectionStatus').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> فشل الاتصال: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Test category endpoint
+        async function testCategoryEndpoint() {
+            const webAppUrl = document.getElementById('webAppUrl').value;
+            if (!webAppUrl) {
+                log('يرجى إدخال Web App URL', 'error');
+                return;
+            }
+
+            log('جاري اختبار نقطة نهاية الأصناف...', 'info');
+            
+            try {
+                // Test different possible endpoints
+                const endpoints = [
+                    `${webAppUrl}?action=getCategory`,
+                    `${webAppUrl}?action=getCategories`,
+                    `${webAppUrl}?action=category`
+                ];
+                
+                for (const endpoint of endpoints) {
+                    log(`اختبار: ${endpoint}`, 'info');
+                    
+                    try {
+                        const response = await fetch(endpoint);
+                        log(`استجابة: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'warning');
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            log(`نجح! استلام ${data.length} صف من الأصناف`, 'success');
+                            log(`عينة: ${JSON.stringify(data.slice(0, 1))}`, 'info');
+                            return;
+                        }
+                    } catch (e) {
+                        log(`فشل: ${e.message}`, 'warning');
+                    }
+                }
+                
+                throw new Error('جميع نقاط النهاية فشلت');
+                
+            } catch (error) {
+                log(`خطأ في اختبار الأصناف: ${error.message}`, 'error');
+            }
+        }
+
+        // Manual URL test
+        async function testManualUrl() {
+            const url = document.getElementById('testUrl').value;
+            if (!url) {
+                log('يرجى إدخال URL للاختبار', 'error');
+                return;
+            }
+
+            log(`اختبار يدوي: ${url}`, 'info');
+            
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                log(`استجابة: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                log(`المحتوى: ${text.substring(0, 200)}...`, 'info');
+                
+            } catch (error) {
+                log(`خطأ: ${error.message}`, 'error');
+            }
+        }
+
+        // Load fallback data
+        function loadFallbackData() {
+            const fallbackData = [
+                {
+                    "id": 1,
+                    "category_id": "electronics",
+                    "category_name": "إلكترونيات",
+                    "image_url": "https://picsum.photos/seed/electronics/100/100.jpg"
+                },
+                {
+                    "id": 2,
+                    "category_id": "clothing",
+                    "category_name": "ملابس",
+                    "image_url": "https://picsum.photos/seed/clothing/100/100.jpg"
+                },
+                {
+                    "id": 3,
+                    "category_id": "food",
+                    "category_name": "أطعمة",
+                    "image_url": "https://picsum.photos/seed/food/100/100.jpg"
+                },
+                {
+                    "id": 4,
+                    "category_id": "books",
+                    "category_name": "كتب",
+                    "image_url": "https://picsum.photos/seed/books/100/100.jpg"
+                }
+            ];
+            
+            localStorage.setItem('categoryFallbackData', JSON.stringify(fallbackData));
+            log(`تم حفظ ${fallbackData.length} أصناف كبيانات احتياطية`, 'success');
+        }
+
+        // Test with local data
+        function testWithLocalData() {
+            const fallbackData = localStorage.getItem('categoryFallbackData');
+            if (!fallbackData) {
+                log('لا توجد بيانات احتياطية. يرجى تحميلها أولاً', 'warning');
+                return;
+            }
+            
+            const data = JSON.parse(fallbackData);
+            log(`اختبار مع ${data.length} أصناف محلية`, 'info');
+            log(`عينة البيانات: ${JSON.stringify(data.slice(0, 2))}`, 'success');
+            
+            // Save to use in main page
+            localStorage.setItem('useLocalData', 'true');
+            log('تم تفعيل استخدام البيانات المحلية', 'success');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            log('تم تحميل أداة التصحيح بنجاح', 'success');
+            
+            // Auto-test connection
+            setTimeout(() => {
+                log('جاري الفحص التلقائي...', 'info');
+                testConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

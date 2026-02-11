@@ -1,0 +1,662 @@
+// Google Apps Script for Admin Dashboard
+// Compatible with the existing database schema
+
+// Sheet names
+const SHEET_NAMES = {
+  PRODUCTS: 'products',
+  CATEGORY: 'category',
+  ORDERS: 'orders',
+  ORDER_ITEMS: 'order_items',
+  CUSTOMERS: 'customers',
+  PROMOTIONS: 'promotions'
+};
+
+// Cache for performance
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+let cache = {};
+
+function doGet(e) {
+  const action = e.parameter.action;
+  const cacheKey = action + '_' + JSON.stringify(e.parameters);
+  
+  try {
+    // Check cache first
+    if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp < CACHE_DURATION)) {
+      return ContentService.createTextOutput(cache[cacheKey].data)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    let result;
+    switch(action) {
+      case 'getProducts':
+        result = getSheetData(SHEET_NAMES.PRODUCTS);
+        break;
+      case 'getCategories':
+        result = getSheetData(SHEET_NAMES.CATEGORY);
+        break;
+      case 'getOrders':
+        result = getSheetData(SHEET_NAMES.ORDERS);
+        break;
+      case 'getOrderItems':
+        result = getSheetData(SHEET_NAMES.ORDER_ITEMS);
+        break;
+      case 'getCustomers':
+        result = getSheetData(SHEET_NAMES.CUSTOMERS);
+        break;
+      case 'getPromotions':
+        result = getSheetData(SHEET_NAMES.PROMOTIONS);
+        break;
+      case 'fetchAll':
+        result = fetchAllData();
+        break;
+      case 'getStatistics':
+        result = getStatistics();
+        break;
+      default:
+        result = createError('Invalid action: ' + action);
+    }
+    
+    // Cache the result
+    cache[cacheKey] = {
+      data: result,
+      timestamp: Date.now()
+    };
+    
+    return ContentService.createTextOutput(result)
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch(error) {
+    console.error('Error in doGet: ' + error.toString());
+    console.error('Stack: ' + error.stack);
+    return ContentService.createTextOutput(JSON.stringify({
+      error: error.toString(),
+      stack: error.stack
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  const action = e.parameter.action;
+  
+  try {
+    // Clear relevant cache on data modification
+    clearCache();
+    
+    let result;
+    const postData = JSON.parse(e.postData.contents);
+    
+    switch(action) {
+      case 'addProduct':
+        result = addProduct(postData);
+        break;
+      case 'addOrder':
+        result = addOrder(postData);
+        break;
+      case 'addOrderItem':
+        result = addOrderItem(postData);
+        break;
+      case 'addCustomer':
+        result = addCustomer(postData);
+        break;
+      case 'addCategory':
+        result = addCategory(postData);
+        break;
+      case 'addPromotion':
+        result = addPromotion(postData);
+        break;
+      case 'updateProduct':
+        result = updateProduct(postData);
+        break;
+      case 'updateOrder':
+        result = updateOrder(postData);
+        break;
+      case 'updateCustomer':
+        result = updateCustomer(postData);
+        break;
+      case 'deleteProduct':
+        result = deleteProduct(postData);
+        break;
+      case 'deleteOrder':
+        result = deleteOrder(postData);
+        break;
+      case 'deleteCustomer':
+        result = deleteCustomer(postData);
+        break;
+      default:
+        result = createError('Invalid action: ' + action);
+    }
+    
+    return ContentService.createTextOutput(result)
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch(error) {
+    console.error('Error in doPost: ' + error.toString());
+    console.error('Stack: ' + error.stack);
+    return ContentService.createTextOutput(JSON.stringify({
+      error: error.toString(),
+      stack: error.stack
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Get sheet data
+function getSheetData(sheetName) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) {
+      console.warn('Sheet not found: ' + sheetName);
+      return JSON.stringify([]);
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    
+    // Skip header row and convert to proper format
+    const rows = data.slice(1).map(row => 
+      row.map(cell => cell !== null ? cell.toString() : '')
+    );
+    
+    console.log('Retrieved ' + rows.length + ' rows from ' + sheetName);
+    return JSON.stringify(rows);
+    
+  } catch(error) {
+    console.error('Error getting sheet data for ' + sheetName + ': ' + error.toString());
+    return JSON.stringify([]);
+  }
+}
+
+// Add product
+function addProduct(productData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PRODUCTS);
+    if (!sheet) {
+      throw new Error('Products sheet not found');
+    }
+    
+    const row = [
+      productData.product_id || '',
+      productData.category_id || '',
+      productData.product_name || '',
+      productData.qtepack || '1',
+      productData.price || '0',
+      productData.image_url || '',
+      productData.status || 'active',
+      productData.description || ''
+    ];
+    
+    sheet.appendRow(row);
+    console.log('Product added: ' + productData.product_name);
+    
+    return JSON.stringify({success: true, message: 'Product added successfully'});
+    
+  } catch(error) {
+    console.error('Error adding product: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Add order
+function addOrder(orderData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.ORDERS);
+    if (!sheet) {
+      throw new Error('Orders sheet not found');
+    }
+    
+    const row = [
+      orderData.order_id || '',
+      orderData.customer_id || '',
+      orderData.total_price || '0',
+      orderData.order_status || 'pending',
+      orderData.order_date || new Date().toISOString().split('T')[0]
+    ];
+    
+    sheet.appendRow(row);
+    console.log('Order added: ' + orderData.order_id);
+    
+    return JSON.stringify({success: true, message: 'Order added successfully'});
+    
+  } catch(error) {
+    console.error('Error adding order: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Add order item
+function addOrderItem(itemData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.ORDER_ITEMS);
+    if (!sheet) {
+      throw new Error('Order items sheet not found');
+    }
+    
+    const row = [
+      itemData.item_id || '',
+      itemData.order_id || '',
+      itemData.product_id || '',
+      itemData.quantity || '1',
+      itemData.unit_price || '0',
+      itemData.subtotal || '0'
+    ];
+    
+    sheet.appendRow(row);
+    console.log('Order item added: ' + itemData.item_id);
+    
+    return JSON.stringify({success: true, message: 'Order item added successfully'});
+    
+  } catch(error) {
+    console.error('Error adding order item: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Add customer
+function addCustomer(customerData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
+    if (!sheet) {
+      throw new Error('Customers sheet not found');
+    }
+    
+    const row = [
+      customerData.customer_id || '',
+      customerData.name || '',
+      customerData.phone || '',
+      customerData.address || '',
+      customerData.email || '',
+      customerData.created_date || new Date().toISOString().split('T')[0],
+      customerData.is_active || 'true'
+    ];
+    
+    sheet.appendRow(row);
+    console.log('Customer added: ' + customerData.name);
+    
+    return JSON.stringify({success: true, message: 'Customer added successfully'});
+    
+  } catch(error) {
+    console.error('Error adding customer: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Add category
+function addCategory(categoryData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CATEGORY);
+    if (!sheet) {
+      throw new Error('Category sheet not found');
+    }
+    
+    const row = [
+      categoryData.category_id || '',
+      categoryData.category_name || '',
+      categoryData.image_url || ''
+    ];
+    
+    sheet.appendRow(row);
+    console.log('Category added: ' + categoryData.category_name);
+    
+    return JSON.stringify({success: true, message: 'Category added successfully'});
+    
+  } catch(error) {
+    console.error('Error adding category: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Add promotion
+function addPromotion(promotionData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROMOTIONS);
+    if (!sheet) {
+      throw new Error('Promotions sheet not found');
+    }
+    
+    const row = [
+      promotionData.id || '',
+      promotionData.title || '',
+      promotionData.subtitle || '',
+      promotionData.image_url || ''
+    ];
+    
+    sheet.appendRow(row);
+    console.log('Promotion added: ' + promotionData.title);
+    
+    return JSON.stringify({success: true, message: 'Promotion added successfully'});
+    
+  } catch(error) {
+    console.error('Error adding promotion: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Update product
+function updateProduct(productData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PRODUCTS);
+    if (!sheet) {
+      throw new Error('Products sheet not found');
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const productId = productData.product_id;
+    
+    // Find the product row
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === productId) {
+        rowIndex = i + 1; // +1 because sheet rows are 1-indexed
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Product not found: ' + productId);
+    }
+    
+    // Update the row
+    const range = sheet.getRange(rowIndex, 1, 1, 8);
+    range.setValues([[
+      productData.product_id || data[rowIndex-1][0],
+      productData.category_id || data[rowIndex-1][1],
+      productData.product_name || data[rowIndex-1][2],
+      productData.qtepack || data[rowIndex-1][3],
+      productData.price || data[rowIndex-1][4],
+      productData.image_url || data[rowIndex-1][5],
+      productData.status || data[rowIndex-1][6],
+      productData.description || data[rowIndex-1][7]
+    ]]);
+    
+    console.log('Product updated: ' + productId);
+    
+    return JSON.stringify({success: true, message: 'Product updated successfully'});
+    
+  } catch(error) {
+    console.error('Error updating product: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Update order
+function updateOrder(orderData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.ORDERS);
+    if (!sheet) {
+      throw new Error('Orders sheet not found');
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const orderId = orderData.order_id;
+    
+    // Find the order row
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === orderId) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Order not found: ' + orderId);
+    }
+    
+    // Update the row
+    const range = sheet.getRange(rowIndex, 1, 1, 5);
+    range.setValues([[
+      orderData.order_id || data[rowIndex-1][0],
+      orderData.customer_id || data[rowIndex-1][1],
+      orderData.total_price || data[rowIndex-1][2],
+      orderData.order_status || data[rowIndex-1][3],
+      orderData.order_date || data[rowIndex-1][4]
+    ]]);
+    
+    console.log('Order updated: ' + orderId);
+    
+    return JSON.stringify({success: true, message: 'Order updated successfully'});
+    
+  } catch(error) {
+    console.error('Error updating order: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Update customer
+function updateCustomer(customerData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
+    if (!sheet) {
+      throw new Error('Customers sheet not found');
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const customerId = customerData.customer_id;
+    
+    // Find the customer row
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === customerId) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Customer not found: ' + customerId);
+    }
+    
+    // Update the row
+    const range = sheet.getRange(rowIndex, 1, 1, 7);
+    range.setValues([[
+      customerData.customer_id || data[rowIndex-1][0],
+      customerData.name || data[rowIndex-1][1],
+      customerData.phone || data[rowIndex-1][2],
+      customerData.address || data[rowIndex-1][3],
+      customerData.email || data[rowIndex-1][4],
+      customerData.created_date || data[rowIndex-1][5],
+      customerData.is_active || data[rowIndex-1][6]
+    ]]);
+    
+    console.log('Customer updated: ' + customerId);
+    
+    return JSON.stringify({success: true, message: 'Customer updated successfully'});
+    
+  } catch(error) {
+    console.error('Error updating customer: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Delete product
+function deleteProduct(productData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PRODUCTS);
+    if (!sheet) {
+      throw new Error('Products sheet not found');
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const productId = productData.product_id;
+    
+    // Find the product row
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === productId) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Product not found: ' + productId);
+    }
+    
+    // Delete the row
+    sheet.deleteRow(rowIndex);
+    console.log('Product deleted: ' + productId);
+    
+    return JSON.stringify({success: true, message: 'Product deleted successfully'});
+    
+  } catch(error) {
+    console.error('Error deleting product: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Delete order
+function deleteOrder(orderData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.ORDERS);
+    if (!sheet) {
+      throw new Error('Orders sheet not found');
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const orderId = orderData.order_id;
+    
+    // Find the order row
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === orderId) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Order not found: ' + orderId);
+    }
+    
+    // Delete the row
+    sheet.deleteRow(rowIndex);
+    console.log('Order deleted: ' + orderId);
+    
+    return JSON.stringify({success: true, message: 'Order deleted successfully'});
+    
+  } catch(error) {
+    console.error('Error deleting order: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Delete customer
+function deleteCustomer(customerData) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
+    if (!sheet) {
+      throw new Error('Customers sheet not found');
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const customerId = customerData.customer_id;
+    
+    // Find the customer row
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === customerId) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Customer not found: ' + customerId);
+    }
+    
+    // Delete the row
+    sheet.deleteRow(rowIndex);
+    console.log('Customer deleted: ' + customerId);
+    
+    return JSON.stringify({success: true, message: 'Customer deleted successfully'});
+    
+  } catch(error) {
+    console.error('Error deleting customer: ' + error.toString());
+    return JSON.stringify({success: false, error: error.toString()});
+  }
+}
+
+// Fetch all data
+function fetchAllData() {
+  try {
+    const allData = {
+      products: JSON.parse(getSheetData(SHEET_NAMES.PRODUCTS)),
+      categories: JSON.parse(getSheetData(SHEET_NAMES.CATEGORY)),
+      orders: JSON.parse(getSheetData(SHEET_NAMES.ORDERS)),
+      orderItems: JSON.parse(getSheetData(SHEET_NAMES.ORDER_ITEMS)),
+      customers: JSON.parse(getSheetData(SHEET_NAMES.CUSTOMERS)),
+      promotions: JSON.parse(getSheetData(SHEET_NAMES.PROMOTIONS))
+    };
+    
+    return JSON.stringify(allData);
+    
+  } catch(error) {
+    console.error('Error fetching all data: ' + error.toString());
+    return JSON.stringify({error: error.toString()});
+  }
+}
+
+// Get statistics
+function getStatistics() {
+  try {
+    const products = JSON.parse(getSheetData(SHEET_NAMES.PRODUCTS));
+    const orders = JSON.parse(getSheetData(SHEET_NAMES.ORDERS));
+    const customers = JSON.parse(getSheetData(SHEET_NAMES.CUSTOMERS));
+    
+    const stats = {
+      totalProducts: products.length,
+      totalOrders: orders.length,
+      totalCustomers: customers.length,
+      pendingOrders: orders.filter(order => order[3] === 'pending').length,
+      completedOrders: orders.filter(order => order[3] === 'completed').length,
+      totalRevenue: orders.reduce((sum, order) => {
+        const price = parseFloat(order[2]) || 0;
+        return sum + price;
+      }, 0)
+    };
+    
+    return JSON.stringify(stats);
+    
+  } catch(error) {
+    console.error('Error getting statistics: ' + error.toString());
+    return JSON.stringify({error: error.toString()});
+  }
+}
+
+// Clear cache
+function clearCache() {
+  cache = {};
+  console.log('Cache cleared');
+}
+
+// Create error response
+function createError(message) {
+  return JSON.stringify({
+    error: message,
+    timestamp: new Date().toISOString()
+  });
+}
+
+// Helper function to generate unique IDs
+function generateId(prefix) {
+  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Test function
+function test() {
+  const result = {
+    sheets: [],
+    test: 'Google Apps Script is working!'
+  };
+  
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = spreadsheet.getSheets();
+  
+  sheets.forEach(sheet => {
+    result.sheets.push({
+      name: sheet.getName(),
+      rows: sheet.getLastRow(),
+      columns: sheet.getLastColumn()
+    });
+  });
+  
+  return JSON.stringify(result);
+}

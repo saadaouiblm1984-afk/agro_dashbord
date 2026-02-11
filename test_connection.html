@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الاتصال بـ Google Sheets</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .test-btn {
+            background: #3498DB;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .test-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #3498DB;
+        }
+        
+        .success {
+            border-left-color: #27AE60;
+            background: #d4edda;
+        }
+        
+        .error {
+            border-left-color: #E74C3C;
+            background: #f8d7da;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="text-center mb-4">
+            <h1 class="mb-3">
+                <i class="fas fa-plug me-2"></i>
+                اختبار الاتصال بـ Google Sheets
+            </h1>
+            <p class="text-muted">اختبار السكريبت المُحسَّن</p>
+        </div>
+        
+        <div class="text-center">
+            <button class="btn test-btn" onclick="testBasicConnection()">
+                <i class="fas fa-link me-2"></i>
+                اختبار الاتصال الأساسي
+            </button>
+            <button class="btn test-btn" onclick="testAllEndpoints()">
+                <i class="fas fa-list me-2"></i>
+                اختبار جميع النقاط
+            </button>
+            <button class="btn test-btn" onclick="testWithWorkingDashboard()">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                فتح لوحة التحكم
+            </button>
+        </div>
+        
+        <div id="testResults"></div>
+    </div>
+    
+    <script>
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxKW4EELjDoMzYSZoBiu0G4HujyM2UKSdXyNtPK66owa2nTQ38ltAIgGfvL_vnMzpst3w/exec';
+        
+        async function testBasicConnection() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>';
+            
+            try {
+                console.log('Testing basic connection...');
+                const response = await fetch(`${WEB_APP_URL}?action=getProducts`);
+                console.log('Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    data = { error: 'Invalid JSON', raw: responseText };
+                }
+                
+                if (response.ok && !data.error) {
+                    resultsDiv.innerHTML = `
+                        <div class="result-box success">
+                            <h5><i class="fas fa-check-circle me-2"></i>نجح الاتصال!</h5>
+                            <p>الحالة: ${response.status}</p>
+                            <div class="code-block">${JSON.stringify(data, null, 2)}</div>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result-box error">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>فشل الاتصال</h5>
+                            <p>الحالة: ${response.status}</p>
+                            <div class="code-block">${JSON.stringify(data, null, 2)}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result-box error">
+                        <h5><i class="fas fa-times-circle me-2"></i>خطأ في الاتصال</h5>
+                        <div class="code-block">${error.toString()}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testAllEndpoints() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p>جاري اختبار جميع النقاط...</p></div>';
+            
+            const endpoints = [
+                { name: 'المنتجات', action: 'getProducts' },
+                { name: 'الفئات', action: 'getCategories' },
+                { name: 'الطلبات', action: 'getOrders' },
+                { name: 'العملاء', action: 'getCustomers' },
+                { name: 'عناصر الطلب', action: 'getOrderItems' },
+                { name: 'العروض الترويجية', action: 'getPromotions' }
+            ];
+            
+            let results = '';
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${WEB_APP_URL}?action=${endpoint.action}`);
+                    const responseText = await response.text();
+                    
+                    let data;
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (e) {
+                        data = { error: 'Invalid JSON', raw: responseText };
+                    }
+                    
+                    const status = response.ok && !data.error ? 'success' : 'error';
+                    const icon = status === 'success' ? 'check-circle' : 'exclamation-triangle';
+                    
+                    results += `
+                        <div class="result-box ${status}">
+                            <h6><i class="fas fa-${icon} me-2"></i>${endpoint.name}</h6>
+                            <p>الحالة: ${response.status} | البيانات: ${Array.isArray(data) ? data.length : (data.error ? 'خطأ' : 'كائن')}</p>
+                        </div>
+                    `;
+                } catch (error) {
+                    results += `
+                        <div class="result-box error">
+                            <h6><i class="fas fa-times-circle me-2"></i>${endpoint.name}</h6>
+                            <p>خطأ: ${error.toString()}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            resultsDiv.innerHTML = results;
+        }
+        
+        function testWithWorkingDashboard() {
+            window.open('working_dashboard.html', '_blank');
+        }
+        
+        // Auto-test on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(testBasicConnection, 1000);
+        });
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
